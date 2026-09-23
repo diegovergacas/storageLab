@@ -1,0 +1,9 @@
+.venv/
+.python-packages/
+__pycache__/
+*.pyc
+dados/estoque.json
+dados/fotos/*
+!dados/fotos/.gitkeep
+.idea/
+.vscode/
