@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StorageLab — Gestão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;560;700&family=Newsreader:opsz,wght@16..72,500;16..72,650&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/gestao.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <div>
+        <p class="eyebrow">Laboratório</p>
+        <h1>Gestão do estoque</h1>
+      </div>
+      <nav>
+        <a href="/">Celular</a>
+        <a class="atual" href="/gestao">Gestão</a>
+      </nav>
+    </header>
+
+    <section class="toolbar">
+      <input id="busca" type="search" placeholder="Buscar codigo, nome ou marca" />
+      <button class="btn btn-primary" id="novo">Cadastrar na mão</button>
+    </section>
+
+    <section class="resumo" id="resumo"></section>
+    <p class="aviso" id="aviso" hidden></p>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Nome</th>
+            <th>Marca</th>
+            <th>Prateleira</th>
+            <th>Emprestado</th>
+            <th>Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="linhas"></tbody>
+      </table>
+    </div>
+
+    <dialog id="dialogo">
+      <form id="formulario" method="dialog">
+        <h2 id="titulo-form">Cadastrar na mão</h2>
+        <label for="codigo">Codigo</label>
+        <input id="codigo" required />
+        <label for="nome">Nome</label>
+        <input id="nome" required />
+        <label for="marca">Marca</label>
+        <input id="marca" />
+        <p class="erro" id="erro-form" hidden></p>
+        <div class="acoes-form">
+          <button type="submit" class="btn btn-primary">Salvar</button>
+          <button type="button" class="btn btn-ghost" id="cancelar">Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/js/api.js" type="module"></script>
+    <script src="/js/gestao.js" type="module"></script>
+  </body>
+</html>

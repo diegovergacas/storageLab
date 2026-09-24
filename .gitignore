@@ -1,8 +1,11 @@
 .venv/
+.ferramentas/
 .python-packages/
 __pycache__/
 *.pyc
+dados/catalogo.json
 dados/estoque.json
+dados/certs/
 dados/fotos/*
 !dados/fotos/.gitkeep
 .idea/

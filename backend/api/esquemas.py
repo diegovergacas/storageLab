@@ -7,3 +7,8 @@ class ItemNovo(BaseModel):
     nome: str = Field(min_length=1)
     marca: str = ""
     foto: str | None = None
+
+
+class ItemEdicao(BaseModel):
+    nome: str = Field(min_length=1)
+    marca: str = ""

@@ -1,76 +1,53 @@
 import { api } from "./api.js";
+import { codigoChave } from "./codigo.js";
 import { estado } from "./estado.js";
 import { escapeHtml, tela } from "./html.js";
-import { lerRotulo } from "./ocr.js";
-import { iniciarScanner, pararLeitor } from "./scanner.js";
+import { iniciarScanner, pararLeitor, pedirCamera } from "./scanner.js";
 
 export function inicio() {
-  api("/api/itens")
-    .then(({ itens }) => {
-      const lista = itens
-        .slice(0, 6)
-        .map(
-          (item) => `
-            <div class="row">
-              <div>
-                <b>${escapeHtml(item.nome)}</b>
-                <span>${escapeHtml(item.marca || "sem marca")}</span>
-              </div>
-              <strong>${item.prateleira}</strong>
-            </div>
-          `,
-        )
-        .join("");
-
-      tela(`
-        <p class="hero">Aponte o celular para o codigo de barras ou QR. Se o reagente ja existir, soma 1. Se for novo, tira foto da embalagem e corrige o que o OCR ler.</p>
-        <button class="btn btn-primary" id="ler">Ler codigo</button>
-        <button class="btn btn-ghost" id="digitar">Digitar codigo</button>
-        <section class="list">
-          <h3>Na prateleira</h3>
-          ${lista || "<p class='meta'>Nenhum item ainda.</p>"}
-        </section>
-      `);
-
-      document.getElementById("ler").onclick = scanner;
-      document.getElementById("digitar").onclick = () => codigoManual();
-    })
-    .catch(() => {
-      tela("<p class='hero'>Nao consegui abrir o estoque.</p>");
-    });
-}
-
-function codigoManual(mensagem) {
   tela(`
-    <div class="card">
-      <p class="kicker">Codigo</p>
-      <h2>Digite o codigo</h2>
-      <p class="meta">${escapeHtml(mensagem || "Use se a camera nao ler.")}</p>
-      <label for="codigo">Barras ou QR</label>
-      <input id="codigo" autocomplete="off" />
-      <label for="tipo">Tipo</label>
-      <input id="tipo" value="manual" />
-    </div>
-    <button class="btn btn-primary" id="ok" style="margin-top:16px">Continuar</button>
-    <button class="btn btn-ghost" id="voltar">Voltar</button>
+    <p class="hero">Aponte o celular para o codigo. Se o produto ja passou pelo lab, vai para a conferencia. Se for a primeira vez, tira foto do rotulo.</p>
+    <button class="btn btn-primary" id="ler">Ler codigo</button>
+    <button class="btn btn-ghost" id="digitar">Digitar codigo</button>
   `);
-  document.getElementById("ok").onclick = () => {
-    const codigo = document.getElementById("codigo").value.trim();
-    if (!codigo) {
-      return;
-    }
-    receberCodigo(codigo, document.getElementById("tipo").value.trim() || "manual");
-  };
-  document.getElementById("voltar").onclick = inicio;
+  document.getElementById("ler").onclick = abrirCamera;
+  document.getElementById("digitar").onclick = () => codigoManual();
 }
 
-async function scanner() {
+async function abrirCamera() {
+  const botao = document.getElementById("ler");
+  if (botao) {
+    botao.disabled = true;
+  }
+  try {
+    const stream = await pedirCamera();
+    estado.stream = stream;
+    mostrarScanner(stream);
+  } catch (erro) {
+    codigoManual(
+      erro?.message || "A camera nao abriu. Permita o acesso ou digite o codigo.",
+    );
+  }
+}
+
+function mostrarScanner(stream) {
   tela(`
-    <div id="reader" class="scan-box"></div>
-    <p class="hint">Enquadre o codigo. Luz boa ajuda.</p>
+    <div class="scan-wrap">
+      <video id="preview" class="scan-video" playsinline webkit-playsinline autoplay muted></video>
+      <div id="reader" class="scan-fallback"></div>
+      <div class="scan-frame"></div>
+    </div>
+    <p class="hint">Segure firme ate confirmar a leitura. Luz boa ajuda.</p>
     <button class="btn btn-ghost" id="manual">Nao leu? Digitar</button>
     <button class="btn btn-ghost" id="voltar">Cancelar</button>
   `);
+
+  const video = document.getElementById("preview");
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.muted = true;
+  video.srcObject = stream;
+  video.play().catch(() => {});
 
   document.getElementById("manual").onclick = async () => {
     await pararLeitor();
@@ -81,28 +58,58 @@ async function scanner() {
     inicio();
   };
 
-  await iniciarScanner(receberCodigo, () => {
-    codigoManual("A camera nao abriu neste aparelho. Digite o codigo.");
+  iniciarScanner(video, receberCodigo).catch(async () => {
+    await pararLeitor();
+    codigoManual("Nao consegui iniciar a leitura. Digite o codigo.");
   });
 }
 
+function codigoManual(mensagem) {
+  tela(`
+    <div class="card">
+      <p class="kicker">Codigo</p>
+      <h2>Digite o codigo</h2>
+      <p class="meta">${escapeHtml(mensagem || "Use se a camera nao ler.")}</p>
+      <label for="codigo">Barras ou QR</label>
+      <input id="codigo" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary" id="ok" style="margin-top:16px">Continuar</button>
+    <button class="btn btn-ghost" id="voltar">Voltar</button>
+  `);
+  document.getElementById("ok").onclick = () => {
+    const codigo = document.getElementById("codigo").value.trim();
+    if (!codigo) {
+      return;
+    }
+    receberCodigo(codigo, "manual");
+  };
+  document.getElementById("voltar").onclick = inicio;
+}
+
 async function receberCodigo(codigo, tipo) {
-  estado.codigo = codigo.trim();
+  estado.codigo = codigoChave(codigo);
   estado.tipo = tipo || "codigo";
+  tela(`
+    <div class="card">
+      <p class="kicker">Codigo lido</p>
+      <h2>${escapeHtml(estado.codigo)}</h2>
+      <p class="meta">Procurando no estoque...</p>
+    </div>
+  `);
   try {
-    const item = await api(`/api/itens/${encodeURIComponent(estado.codigo)}/entrada`, {
-      method: "POST",
-    });
-    itemEncontrado(item);
+    const item = await api(
+      `/api/itens/localizar?codigo=${encodeURIComponent(estado.codigo)}`,
+    );
+    conferencia(item);
   } catch {
-    itemNovo();
+    cadastroNovo();
   }
 }
 
-function itemEncontrado(item) {
+function conferencia(item) {
   tela(`
     <div class="card">
-      <p class="kicker">Ja estava no estoque</p>
+      <p class="kicker">${item.prateleira < 1 && item.emprestado < 1 ? "Ja conhecido no lab" : "Conferencia"}</p>
       <h2>${escapeHtml(item.nome)}</h2>
       <p class="meta">${escapeHtml(item.marca || "sem marca")}<br>${escapeHtml(item.codigo)}</p>
       <div class="qty">
@@ -110,24 +117,88 @@ function itemEncontrado(item) {
         <div><span>Emprestado</span><strong>${item.emprestado}</strong></div>
       </div>
     </div>
-    <button class="btn btn-primary" id="outro" style="margin-top:16px">Ler outro</button>
+    <button class="btn btn-primary" id="confirmar" style="margin-top:16px">Confirmar entrada (+1)</button>
+    <button class="btn btn-ghost" id="acabou" ${item.prateleira < 1 ? "disabled" : ""}>Acabou (-1)</button>
+    <button class="btn btn-ghost" id="outro">Ler outro</button>
     <button class="btn btn-ghost" id="inicio">Inicio</button>
   `);
-  document.getElementById("outro").onclick = scanner;
+  document.getElementById("confirmar").onclick = () => confirmarEntrada(item);
+  document.getElementById("acabou").onclick = () => confirmarAcabou(item);
+  document.getElementById("outro").onclick = abrirCamera;
   document.getElementById("inicio").onclick = inicio;
 }
 
-function itemNovo() {
+async function confirmarAcabou(item) {
+  const botao = document.getElementById("acabou");
+  botao.disabled = true;
+  try {
+    const atual = await api(`/api/itens/${encodeURIComponent(item.codigo)}/acabou`, {
+      method: "POST",
+    });
+    tela(`
+      <div class="card">
+        <p class="kicker warn">Baixa registrada</p>
+        <h2>${escapeHtml(atual.nome)}</h2>
+        <p class="meta">${escapeHtml(atual.marca || "sem marca")}</p>
+        <div class="qty">
+          <div><span>Prateleira</span><strong>${atual.prateleira}</strong></div>
+          <div><span>Emprestado</span><strong>${atual.emprestado}</strong></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="outro" style="margin-top:16px">Ler outro</button>
+      <button class="btn btn-ghost" id="inicio">Inicio</button>
+    `);
+    document.getElementById("outro").onclick = abrirCamera;
+    document.getElementById("inicio").onclick = inicio;
+  } catch (erro) {
+    botao.disabled = false;
+    conferencia(item);
+  }
+}
+
+async function confirmarEntrada(item) {
+  const botao = document.getElementById("confirmar");
+  botao.disabled = true;
+  const atual = await api(`/api/itens/${encodeURIComponent(item.codigo)}/entrada`, {
+    method: "POST",
+  });
+  tela(`
+    <div class="card">
+      <p class="kicker">Entrada confirmada</p>
+      <h2>${escapeHtml(atual.nome)}</h2>
+      <p class="meta">${escapeHtml(atual.marca || "sem marca")}</p>
+      <div class="qty">
+        <div><span>Prateleira</span><strong>${atual.prateleira}</strong></div>
+        <div><span>Emprestado</span><strong>${atual.emprestado}</strong></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="outro" style="margin-top:16px">Ler outro</button>
+    <button class="btn btn-ghost" id="inicio">Inicio</button>
+  `);
+  document.getElementById("outro").onclick = abrirCamera;
+  document.getElementById("inicio").onclick = inicio;
+}
+
+function cadastroNovo() {
   estado.fotoUrl = "";
   estado.ocr = { nome: "", marca: "" };
   tela(`
     <div class="card">
       <p class="kicker warn">Nao cadastrado</p>
-      <h2>Foto da embalagem</h2>
-      <p class="meta">Codigo ${escapeHtml(estado.codigo)}. Tire uma foto nítida do rotulo para o OCR ler nome e marca.</p>
+      <h2>Foto do rotulo</h2>
+      <p class="meta">O codigo ${escapeHtml(estado.codigo)} nao esta no estoque. Tire uma foto nitida do rotulo para o OCR preencher nome e marca. Depois corrija se precisar.</p>
+      <label for="codigo">Codigo</label>
+      <input id="codigo" value="${escapeHtml(estado.codigo)}" readonly />
+      <label for="nome">Nome</label>
+      <input id="nome" autocomplete="off" />
+      <label for="marca">Marca</label>
+      <input id="marca" autocomplete="off" />
+      <p id="ocr-status" class="ocr-status">Abrindo a camera do rotulo...</p>
+      <img id="preview-foto" class="photo hidden-file" alt="Rotulo" />
     </div>
-    <button class="btn btn-primary" id="foto" style="margin-top:16px">Abrir camera</button>
     <input id="arquivo" class="hidden-file" type="file" accept="image/*" capture="environment" />
+    <button class="btn btn-ghost" id="foto" style="margin-top:16px">Tirar outra foto</button>
+    <button class="btn btn-primary" id="salvar">Salvar no estoque</button>
     <button class="btn btn-ghost" id="voltar">Cancelar</button>
   `);
   const arquivo = document.getElementById("arquivo");
@@ -137,47 +208,40 @@ function itemNovo() {
       processarFoto(arquivo.files[0]);
     }
   };
+  document.getElementById("salvar").onclick = salvarNovo;
   document.getElementById("voltar").onclick = inicio;
+  arquivo.click();
 }
 
 async function processarFoto(arquivo) {
-  tela(`
-    <p class="ocr-status">Lendo o rotulo...</p>
-    <div class="card"><p class="meta">OCR em andamento. Depois voce corrige no celular.</p></div>
-  `);
-
+  const status = document.getElementById("ocr-status");
+  const botao = document.getElementById("foto");
+  status.textContent = "Lendo o rotulo com Tesseract...";
+  botao.disabled = true;
   const corpo = new FormData();
   corpo.append("arquivo", arquivo);
-  const { url } = await api("/api/fotos", { method: "POST", body: corpo });
-  estado.fotoUrl = url;
-
   try {
-    estado.ocr = await lerRotulo(arquivo);
-  } catch {
-    estado.ocr = { nome: "", marca: "" };
+    const lido = await api("/api/ocr", { method: "POST", body: corpo });
+    estado.fotoUrl = lido.url;
+    estado.ocr = { nome: lido.nome || "", marca: lido.marca || "" };
+    const preview = document.getElementById("preview-foto");
+    preview.src = lido.url;
+    preview.classList.remove("hidden-file");
+    const nome = document.getElementById("nome");
+    const marca = document.getElementById("marca");
+    if (lido.nome) {
+      nome.value = lido.nome;
+    }
+    if (lido.marca) {
+      marca.value = lido.marca;
+    }
+    status.textContent = lido.nome
+      ? "OCR preencheu. Corrija se estiver errado."
+      : "OCR nao leu o nome. Digite os campos.";
+  } catch (erro) {
+    status.textContent = erro.message || "Nao consegui ler o rotulo. Digite os campos.";
   }
-  correcao();
-}
-
-function correcao() {
-  tela(`
-    <div class="card">
-      <p class="kicker">Corrija no celular</p>
-      <h2>Confira o que o OCR leu</h2>
-      ${estado.fotoUrl ? `<img class="photo" src="${escapeHtml(estado.fotoUrl)}" alt="Embalagem" />` : ""}
-      <p class="ocr-status">Se estiver errado, edite antes de gravar.</p>
-      <label for="nome">Nome</label>
-      <input id="nome" value="${escapeHtml(estado.ocr.nome)}" />
-      <label for="marca">Marca</label>
-      <input id="marca" value="${escapeHtml(estado.ocr.marca)}" />
-      <label for="codigo">Codigo</label>
-      <input id="codigo" value="${escapeHtml(estado.codigo)}" readonly />
-    </div>
-    <button class="btn btn-primary" id="salvar" style="margin-top:16px">Salvar no estoque</button>
-    <button class="btn btn-ghost" id="voltar">Voltar</button>
-  `);
-  document.getElementById("salvar").onclick = salvarNovo;
-  document.getElementById("voltar").onclick = itemNovo;
+  botao.disabled = false;
 }
 
 async function salvarNovo() {
@@ -203,7 +267,7 @@ async function salvarNovo() {
     <div class="card">
       <p class="kicker">Cadastrado</p>
       <h2>${escapeHtml(item.nome)}</h2>
-      <p class="meta">${escapeHtml(item.marca || "sem marca")}</p>
+      <p class="meta">${escapeHtml(item.marca || "sem marca")}<br>${escapeHtml(item.codigo)}</p>
       <div class="qty">
         <div><span>Prateleira</span><strong>${item.prateleira}</strong></div>
         <div><span>Emprestado</span><strong>${item.emprestado}</strong></div>
@@ -212,6 +276,6 @@ async function salvarNovo() {
     <button class="btn btn-primary" id="outro" style="margin-top:16px">Ler outro</button>
     <button class="btn btn-ghost" id="inicio">Inicio</button>
   `);
-  document.getElementById("outro").onclick = scanner;
+  document.getElementById("outro").onclick = abrirCamera;
   document.getElementById("inicio").onclick = inicio;
 }
