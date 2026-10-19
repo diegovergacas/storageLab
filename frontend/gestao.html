@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StorageLab — Gestão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;560;700&family=Newsreader:opsz,wght@16..72,500;16..72,650&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/gestao.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <div>
+        <p class="eyebrow">Laboratório</p>
+        <h1>Gestão do estoque</h1>
+      </div>
+      <nav>
+        <a href="/">Celular</a>
+        <a class="atual" href="/gestao">Gestão</a>
+      </nav>
+    </header>
+
+    <section class="toolbar">
+      <input id="busca" type="search" placeholder="Buscar nome, empresa, solicitante, verba..." />
+      <button class="btn btn-ghost" id="importar">Atualizar da planilha</button>
+      <button class="btn btn-primary" id="novo">Cadastrar na mão</button>
+    </section>
+
+    <section class="resumo" id="resumo"></section>
+    <p class="aviso" id="aviso" hidden></p>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Solicitante</th>
+            <th>Reagente / Material</th>
+            <th>Código fornecedor</th>
+            <th>Quantidade</th>
+            <th>Unidade</th>
+            <th>Empresa</th>
+            <th>Data</th>
+            <th>Valor</th>
+            <th>Previsão</th>
+            <th>Verba</th>
+            <th>Entregue</th>
+            <th>Data entrega</th>
+            <th>Local / sala</th>
+            <th>Armário / freezer / geladeira</th>
+            <th>Codigo</th>
+            <th>Prateleira</th>
+            <th>Emprestado</th>
+            <th>Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="linhas"></tbody>
+      </table>
+    </div>
+
+    <dialog id="dialogo">
+      <form id="formulario" method="dialog">
+        <h2 id="titulo-form">Cadastrar na mão</h2>
+        <label for="codigo">Codigo</label>
+        <input id="codigo" required />
+        <label for="solicitante">Solicitante</label>
+        <input id="solicitante" />
+        <label for="nome">Reagente / Material</label>
+        <input id="nome" required />
+        <label for="codigo-fornecedor">Código do fornecedor</label>
+        <input id="codigo-fornecedor" />
+        <label for="quantidade">Quantidade</label>
+        <input id="quantidade" />
+        <label for="unidade">Unidade</label>
+        <input id="unidade" />
+        <label for="marca">Empresa</label>
+        <input id="marca" />
+        <label for="data">Data</label>
+        <input id="data" />
+        <label for="valor">Valor</label>
+        <input id="valor" />
+        <label for="previsao">Previsão</label>
+        <input id="previsao" />
+        <label for="verba">Verba</label>
+        <input id="verba" />
+        <label for="entregue">Entregue</label>
+        <input id="entregue" />
+        <label for="data-entrega">Data da entrega</label>
+        <input id="data-entrega" />
+        <label for="local-sala">Local / sala</label>
+        <input id="local-sala" />
+        <label for="local-armazenamento">Armário, freezer ou geladeira</label>
+        <input id="local-armazenamento" />
+        <label for="barras" id="rotulo-barras" hidden>Codigo de barras</label>
+        <input id="barras" hidden />
+        <p class="erro" id="erro-form" hidden></p>
+        <div class="acoes-form">
+          <button type="submit" class="btn btn-primary">Salvar</button>
+          <button type="button" class="btn btn-ghost" id="cancelar">Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/js/api.js" type="module"></script>
+    <script src="/js/gestao.js" type="module"></script>
+  </body>
+</html>
