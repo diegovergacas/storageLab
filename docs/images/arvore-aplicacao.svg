@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="860" viewBox="0 0 1200 860" role="img" aria-labelledby="title desc">
+  <title id="title">Árvore da aplicação StorageLab</title>
+  <desc id="desc">Estrutura de pastas e arquivos principais do projeto.</desc>
+  <style>
+    .bg{fill:#f3eee3}.panel{fill:#fffaf1;stroke:#d8cfbe;stroke-width:2}.title{font:700 35px Arial,sans-serif;fill:#24362d}.text{font:500 22px monospace;fill:#1b2218}.folder{fill:#c45c26;font-weight:700}.muted{fill:#5d6756}
+  </style>
+  <rect class="bg" width="1200" height="860" rx="24"/>
+  <rect class="panel" x="45" y="38" width="1110" height="784" rx="20"/>
+  <text class="title" x="85" y="95">StorageLab — estrutura da aplicação</text>
+  <text class="text" x="90" y="150">estoque/</text>
+  <text class="text folder" x="125" y="195">├── backend/</text><text class="text muted" x="390" y="195">API, regras, OCR e persistência</text>
+  <text class="text" x="165" y="235">├── api/                 rotas HTTP e validação</text>
+  <text class="text" x="165" y="275">├── dominio/             itens, códigos e rótulos</text>
+  <text class="text" x="165" y="315">├── persistencia/        JSON e importação da planilha</text>
+  <text class="text" x="165" y="355">├── servicos/            OCR com Tesseract</text>
+  <text class="text" x="165" y="395">└── main.py              FastAPI</text>
+  <text class="text folder" x="125" y="445">├── frontend/</text><text class="text muted" x="390" y="445">telas do celular e do computador</text>
+  <text class="text" x="165" y="485">├── css/ e js/           interface e comportamento</text>
+  <text class="text" x="165" y="525">├── index.html           operador no celular</text>
+  <text class="text" x="165" y="565">└── gestao.html          gestão no computador</text>
+  <text class="text folder" x="125" y="615">├── dados/</text><text class="text muted" x="390" y="615">dados persistentes e fotos</text>
+  <text class="text" x="165" y="655">├── catalogo.json, estoque.json, pedidos.json</text>
+  <text class="text" x="165" y="695">└── fotos/ e certs/</text>
+  <text class="text folder" x="125" y="745">├── docs/                documentação e diagramas</text>
+  <text class="text" x="125" y="790">└── LISTA INSUMOS LAB PESQ.xlsx</text>
+</svg>

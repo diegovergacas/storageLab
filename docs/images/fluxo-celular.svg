@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1050" viewBox="0 0 1200 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Fluxo do operador no celular</title><desc id="desc">Leitura de código, conferência, cadastro e atualização de estoque.</desc>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#355245"/></marker></defs>
+  <style>.bg{fill:#f3eee3}.box{fill:#fffaf1;stroke:#355245;stroke-width:2}.decision{fill:#efe7d6;stroke:#c45c26;stroke-width:2}.t{font:700 24px Arial,sans-serif;fill:#1b2218;text-anchor:middle}.s{font:500 18px Arial,sans-serif;fill:#5d6756;text-anchor:middle}.title{font:700 35px Arial,sans-serif;fill:#24362d;text-anchor:middle}.line{stroke:#355245;stroke-width:3;marker-end:url(#a)}</style>
+  <rect class="bg" width="1200" height="1050" rx="24"/><text class="title" x="600" y="60">Fluxo do operador no celular</text>
+  <rect class="box" x="425" y="95" width="350" height="70" rx="16"/><text class="t" x="600" y="138">Ler ou digitar código</text>
+  <path class="line" d="M600 165 V215"/><path class="decision" d="M600 215 L760 285 L600 355 L440 285 Z"/><text class="t" x="600" y="292">Código existe?</text>
+  <path class="line" d="M440 285 H245 V405"/><text class="s" x="330" y="273">não</text>
+  <rect class="box" x="70" y="405" width="350" height="82" rx="16"/><text class="t" x="245" y="440">Escolher cadastro</text><text class="s" x="245" y="468">manual ou foto do rótulo</text>
+  <path class="line" d="M245 487 V550"/><rect class="box" x="70" y="550" width="350" height="92" rx="16"/><text class="t" x="245" y="585">Preencher formulário</text><text class="s" x="245" y="615">ou selecionar item da planilha</text>
+  <path class="line" d="M245 642 V720 H470"/><rect class="box" x="470" y="685" width="300" height="72" rx="16"/><text class="t" x="620" y="728">Salvar cadastro</text>
+  <path class="line" d="M760 285 H955 V405"/><text class="s" x="855" y="273">sim</text>
+  <rect class="box" x="780" y="405" width="350" height="82" rx="16"/><text class="t" x="955" y="440">Conferir produto</text><text class="s" x="955" y="468">estoque e localização</text>
+  <path class="line" d="M955 487 V550"/><rect class="box" x="780" y="550" width="350" height="92" rx="16"/><text class="t" x="955" y="585">Informar quantidade</text><text class="s" x="955" y="615">ou editar dados / dar baixa</text>
+  <path class="line" d="M955 642 V720 H770"/><path class="line" d="M770 721 H770"/>
+  <path class="line" d="M620 757 V845"/><rect class="box" x="410" y="845" width="420" height="82" rx="16"/><text class="t" x="620" y="880">Estoque atualizado</text><text class="s" x="620" y="908">catálogo permanece disponível</text>
+</svg>

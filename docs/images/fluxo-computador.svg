@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="930" viewBox="0 0 1200 930" role="img" aria-labelledby="title desc">
+  <title id="title">Fluxo de gestão no computador</title><desc id="desc">Consulta, importação da planilha, edição e movimentação de estoque.</desc>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#355245"/></marker></defs>
+  <style>.bg{fill:#f3eee3}.box{fill:#fffaf1;stroke:#355245;stroke-width:2}.t{font:700 22px Arial,sans-serif;fill:#1b2218;text-anchor:middle}.s{font:500 17px Arial,sans-serif;fill:#5d6756;text-anchor:middle}.title{font:700 35px Arial,sans-serif;fill:#24362d;text-anchor:middle}.line{stroke:#355245;stroke-width:3;marker-end:url(#a)}</style>
+  <rect class="bg" width="1200" height="930" rx="24"/><text class="title" x="600" y="60">Fluxo de gestão no computador</text>
+  <rect class="box" x="425" y="100" width="350" height="72" rx="16"/><text class="t" x="600" y="143">Abrir /gestao</text>
+  <path class="line" d="M600 172 V240"/>
+  <rect class="box" x="70" y="240" width="300" height="88" rx="16"/><text class="t" x="220" y="275">Consultar tabela</text><text class="s" x="220" y="304">buscar, ordenar e navegar</text>
+  <rect class="box" x="450" y="240" width="300" height="88" rx="16"/><text class="t" x="600" y="275">Atualizar planilha</text><text class="s" x="600" y="304">aba Compras, R$ e US$</text>
+  <rect class="box" x="830" y="240" width="300" height="88" rx="16"/><text class="t" x="980" y="275">Editar ou cadastrar</text><text class="s" x="980" y="304">formulário preenchido</text>
+  <path class="line" d="M600 240 H220"/><path class="line" d="M600 240 V240"/><path class="line" d="M600 240 H980"/>
+  <path class="line" d="M220 328 V430 H600"/><path class="line" d="M600 328 V430"/><path class="line" d="M980 328 V430 H600"/>
+  <rect class="box" x="400" y="430" width="400" height="84" rx="16"/><text class="t" x="600" y="465">Catálogo atualizado</text><text class="s" x="600" y="493">dados de compra e localização</text>
+  <path class="line" d="M600 514 V590"/>
+  <rect class="box" x="100" y="590" width="270" height="88" rx="16"/><text class="t" x="235" y="625">Entrada</text><text class="s" x="235" y="654">soma quantidade</text>
+  <rect class="box" x="465" y="590" width="270" height="88" rx="16"/><text class="t" x="600" y="625">Empréstimo</text><text class="s" x="600" y="654">emprestar ou devolver</text>
+  <rect class="box" x="830" y="590" width="270" height="88" rx="16"/><text class="t" x="965" y="625">Baixa</text><text class="s" x="965" y="654">item acabou</text>
+  <path class="line" d="M600 590 H235"/><path class="line" d="M600 590 V590"/><path class="line" d="M600 590 H965"/>
+  <path class="line" d="M235 678 V760 H600"/><path class="line" d="M600 678 V760"/><path class="line" d="M965 678 V760 H600"/>
+  <rect class="box" x="390" y="760" width="420" height="82" rx="16"/><text class="t" x="600" y="795">Estoque persistido</text><text class="s" x="600" y="823">prateleira e emprestados</text>
+</svg>

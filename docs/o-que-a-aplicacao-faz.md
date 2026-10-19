@@ -1,111 +1,65 @@
 # O que a aplicação faz
 
-O StorageLab é o controle de estoque do laboratório: o que entra, o que está na prateleira, o que foi emprestado para outro lab e o que acabou.
+O StorageLab controla os insumos do laboratório: itens recebidos, disponíveis na prateleira, emprestados e baixados por término. O catálogo não perde um produto já conhecido, mesmo quando sua quantidade chega a zero.
 
-A ideia original era um sistema web, no celular Android e no computador, com os dados numa planilha do Google Drive. Nesta fase de criação, para não ter custo de nuvem, o **PC do lab é o servidor** e o celular fala com ele pela **rede de casa**. Os dados ficam neste computador. Drive e uma conta Google só da aplicação ficam para a produção.
+O PC do laboratório funciona como servidor local. Celular e computador acessam o sistema na mesma rede Wi-Fi, por HTTPS.
 
-A linguagem escolhida foi **Python** (melhor encaixe com web, OCR e, no futuro, as APIs do Google). Java ficou de fora.
+## Operação pelo celular
 
----
+O operador pode ler código de barras ou QR Code pela câmera. Caso a câmera não consiga ler, ele digita o código.
 
-## Duas caras, o mesmo estoque
+- Quando o código já existe, o sistema mostra nome, empresa, localização, itens na prateleira e itens emprestados.
+- O operador informa a quantidade recebida para registrar a entrada.
+- Também pode registrar que um frasco acabou ou abrir a edição dos dados cadastrados.
+- Quando o código é novo, o operador escolhe entre cadastro manual ou foto do rótulo. A foto usa OCR para sugerir nome e empresa, mas a revisão humana continua necessária.
+- Se o produto já estiver pendente na lista de compras, a seleção preenche automaticamente o formulário. O operador revisa os dados, salva e vincula o código lido ao produto.
 
-```
-  CELULAR  /                      PC  /gestao
-  usuario comum do lab            quem gerencia
-  so leitura e cadastro           lista, emprestimo, baixa, edicao
-         |                               |
-         +---------------+---------------+
-                         v
-              catalogo eterno + quantidades
-```
+O cadastro manual possui: solicitante, reagente/material, código do fornecedor, quantidade, unidade, empresa, data, valor em reais ou dólares, previsão, verba, status e data de entrega, sala e local de armazenamento.
 
-O celular **não mostra** gestão nem a lista da prateleira. Isso é de propósito: quem conta frasco no corredor não mexe no painel.
+## Gestão pelo computador
 
----
+Em `/gestao`, a pessoa responsável pode:
 
-## O que o celular faz
+- consultar, buscar e ordenar a tabela por suas colunas;
+- navegar lateralmente pela tabela sem perder os títulos das colunas;
+- clicar no nome de um produto ou em **Editar** para abrir o cadastro já preenchido;
+- cadastrar itens manualmente;
+- atualizar os pedidos a partir da planilha de compras;
+- vincular um código de barras a um produto pendente;
+- registrar entrada, empréstimo, devolução e baixa por término.
 
-1. Abre a câmera e lê **qualquer código de barras ou QR** (não só EAN-13).
-2. Se o código **já passou pelo lab**, vai para a **conferência**: mostra o cadastro, a localização, quanto tem na prateleira e quanto está emprestado. O operador informa a quantidade recebida e pode editar os dados se necessário.
-3. Se o código **nunca esteve no catálogo**, pergunta se o produto **já veio da planilha de compras**. Se sim, liga o código de barras a esse nome e não cria duplicata. Se for novo, tira **foto do rótulo**. O PC lê o texto com **pytesseract** (OCR) e sugere nome e marca. A pessoa **corrige no próprio smartphone** e salva.
-4. Sem código não grava. O código é a identidade. Assim, da próxima vez, só a leitura resolve.
+## Regras de quantidade
 
-Na conferência dá para:
+| Ação | Prateleira | Emprestado |
+|---|---:|---:|
+| Entrada | soma a quantidade informada | não altera |
+| Emprestar | diminui 1 | soma 1 |
+| Devolver | soma 1 | diminui 1 |
+| Acabou | diminui 1 | não altera |
 
-- confirmar **entrada** — informa quantos frascos chegaram e soma essa quantidade à prateleira
-- marcar **Acabou (-1)** — saiu da prateleira, acabou
-- ler outro código
+A quantidade da planilha representa a compra registrada. A quantidade na prateleira representa os frascos físicos disponíveis no laboratório.
 
-A unidade, por enquanto, é o **frasco** (cada leitura soma ou tira 1). Controlar o que sobrou dentro do frasco (ml, g) ficou para depois.
+## Valores e moedas
 
-A câmera no Android só abre em **HTTPS**. Por isso o servidor local usa certificado. A leitura só vale depois de **várias capturas iguais**, para o código errado da câmera não virar produto novo.
+A gestão separa o valor da compra em duas colunas: `R$` e `US$`.
 
----
+- Valores que começam com `US$`, `U$` ou `USD` são mostrados em `US$`.
+- Valores que começam com `R$` ou não possuem símbolo de moeda são mostrados em `R$`.
+- Verba permanece uma única coluna, pois identifica a fonte de financiamento.
 
-## O que o PC faz (gestão)
-
-No navegador, em `/gestao`, quem gerencia:
-
-- vê o estoque-base com as colunas da planilha, incluindo código do fornecedor, unidade, data de entrega e localização
-- busca por código, nome, empresa, solicitante ou verba
-- atualiza esses campos a partir da planilha e liga código de barras a um `PLAN-`
-- cadastra na mão com os mesmos campos
-- **+1**, **Emprestar**, **Devolver**, **Acabou**, **Editar** — isso mexe na **prateleira** (frasco), não na Quantidade da planilha
-
-```
-+1          prateleira +1
-Emprestar   prateleira -1   emprestado +1
-Devolver    prateleira +1   emprestado -1
-Acabou      prateleira -1   (emprestado nao mexe)
-```
-
-Empréstimo e “acabou” não se misturam. Emprestado ainda é do lab, só está em outro lugar. Acabou é baixa.
-
----
-
-## O catálogo é eterno
-
-Há dois arquivos:
+## Dados permanentes
 
 | Arquivo | Papel |
 |---|---|
-| `dados/catalogo.json` | O que **já teve no lab**: código, nome, empresa, foto. Não some. |
-| `dados/estoque.json` | O que **tem agora**: prateleira e emprestado. |
-| `dados/pedidos.json` | Pedidos da planilha de compras (não vira quantidade de prateleira). |
+| `dados/catalogo.json` | Dados e identificação dos produtos já conhecidos pelo laboratório. |
+| `dados/estoque.json` | Quantidades em prateleira e emprestadas. |
+| `dados/pedidos.json` | Pedidos lidos da planilha. |
+| `dados/fotos/` | Fotos de rótulos usadas no cadastro. |
 
-Se o produto acabou e depois chega de novo, o celular lê o mesmo código e **não pede cadastro novo**. Só soma 1 na prateleira. O histórico de “já conhecemos esse reagente” fica.
+## Fora do escopo atual
 
----
-
-## O que ainda não é desta fase
-
-- Planilha e fotos no **Google Drive** (conta de teste pessoal, depois conta só da aplicação, com conta robô no servidor)
-- Controlar **volume/massa** que sobrou no frasco
-- Coluna ou aba de histórico de baixas (hoje “acabou” só diminui a prateleira)
-- **IA** no rótulo: neste ThinkPad T450 (CPU sem placa dedicada, 11 GB de RAM) um modelo de visão local esquenta e emperra. O caminho leve é deixar o Tesseract + correção humana; IA na nuvem, se entrar, é depois
-- Login e permissão de verdade (hoje a “trava” da gestão é não aparecer no celular)
-
----
-
-## Como as peças se encaixam
-
-```
-foto / codigo
-     |
-     v
-frontend (web no Chrome)
-     |
-     v
-backend Python (FastAPI neste PC)
-     |
-     +--> dominio (regras: +1, emprestar, codigo)
-     +--> OCR (pytesseract, so no primeiro cadastro)
-     +--> persistencia
-              |
-              +--> catalogo.json   (eterno)
-              +--> estoque.json    (quantidade)
-              +--> fotos/          (rotulos)
-```
-
-Em resumo: o lab aponta o celular, o código decide se é conhecido ou novo, o PC guarda para sempre o que já entrou, e a mesa no navegador empresta, devolve, dá baixa e corrige o cadastro.
+- Login e permissões por usuário.
+- Histórico detalhado de cada movimentação.
+- Controle de volume ou massa restante dentro de um frasco.
+- Sincronização com Google Drive.
+- Uso de IA em nuvem para leitura de rótulos.
