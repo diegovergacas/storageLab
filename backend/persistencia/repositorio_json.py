@@ -192,7 +192,8 @@ class RepositorioJson:
             mudou = False
             for campo in ("nome", "marca", *CAMPOS_BASE):
                 valor = produto.get(campo)
-                if not valor:
+                limpar_moeda = forcar and campo in {"valor_brl", "valor_usd"}
+                if not valor and not limpar_moeda:
                     continue
                 if forcar or not str(atual.get(campo) or "").strip():
                     if atual.get(campo) != valor:

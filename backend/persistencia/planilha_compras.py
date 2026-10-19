@@ -4,7 +4,7 @@ import zipfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from backend.dominio.item import CAMPOS_BASE
+from backend.dominio.item import CAMPOS_BASE, valores_moeda
 
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 PLANILHA = Path(__file__).resolve().parents[2] / "LISTA INSUMOS LAB PESQ.xlsx"
@@ -96,6 +96,7 @@ def ler_compras(caminho: Path | None = None) -> dict:
             continue
         empresa = _valor(grade, linha, colunas, "Empresa")
         interno = codigo_planilha(nome, empresa)
+        valor = _valor(grade, linha, colunas, "Valor")
         pedido = {
             "codigo_produto": interno,
             "solicitante": _valor(grade, linha, colunas, "Solicitante"),
@@ -105,7 +106,8 @@ def ler_compras(caminho: Path | None = None) -> dict:
             "unidade": _valor(grade, linha, colunas, "Unidade"),
             "empresa": empresa,
             "data": _data_excel(_valor(grade, linha, colunas, "Data")),
-            "valor": _valor(grade, linha, colunas, "Valor"),
+            "valor": valor,
+            **valores_moeda(valor),
             "previsao": _data_excel(_valor(grade, linha, colunas, "Previsão", "Previsao")),
             "verba": _valor(grade, linha, colunas, "Verba"),
             "entregue": _valor(grade, linha, colunas, "Entregue"),

@@ -24,6 +24,8 @@ CAMPOS_BASE = (
     "empresa",
     "data",
     "valor",
+    "valor_brl",
+    "valor_usd",
     "previsao",
     "verba",
     "entregue",
@@ -61,8 +63,30 @@ def posicao_estoque(codigo: str, prateleira: int = 0, emprestado: int = 0) -> di
     }
 
 
+def valores_moeda(valor: str) -> dict[str, str]:
+    texto = str(valor or "").strip()
+    if texto.upper().startswith(("US$", "U$", "USD")):
+        return {"valor_brl": "", "valor_usd": texto}
+    return {"valor_brl": texto, "valor_usd": ""}
+
+
 def item_visto(produto: dict, estoque: dict | None) -> dict:
     posicao = estoque or {}
+    valor_original = str(produto.get("valor") or "").strip()
+    if valor_original:
+        # O texto original é a fonte de verdade para cadastros antigos.
+        # Assim, um valor identificado como dólar não pode aparecer em R$.
+        separados = valores_moeda(valor_original)
+        valor_brl = separados["valor_brl"]
+        valor_usd = separados["valor_usd"]
+    else:
+        valor_brl = produto.get("valor_brl") or ""
+        valor_usd = produto.get("valor_usd") or ""
+    produto = {
+        **produto,
+        "valor_brl": valor_brl,
+        "valor_usd": valor_usd,
+    }
     return {
         **produto,
         "prateleira": int(posicao.get("prateleira", 0)),

@@ -32,28 +32,39 @@
 
     <section class="resumo" id="resumo"></section>
     <p class="aviso" id="aviso" hidden></p>
+    <div class="navegacao-tabela" aria-label="Navegação horizontal da tabela">
+      <span>Arraste a barra ou use os botões para ver mais colunas.</span>
+      <div>
+        <button class="btn btn-ghost" id="colunas-esquerda" type="button">← Colunas</button>
+        <button class="btn btn-ghost" id="colunas-direita" type="button">Colunas →</button>
+      </div>
+    </div>
     <div class="tabela-wrap">
       <table>
         <thead>
           <tr>
-            <th>Solicitante</th>
-            <th>Reagente / Material</th>
-            <th>Código fornecedor</th>
-            <th>Quantidade</th>
-            <th>Unidade</th>
-            <th>Empresa</th>
-            <th>Data</th>
-            <th>Valor</th>
-            <th>Previsão</th>
-            <th>Verba</th>
-            <th>Entregue</th>
-            <th>Data entrega</th>
-            <th>Local / sala</th>
-            <th>Armário / freezer / geladeira</th>
-            <th>Codigo</th>
-            <th>Prateleira</th>
-            <th>Emprestado</th>
-            <th>Acoes</th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="solicitante" type="button">Solicitante</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="nome" type="button">Reagente / Material</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="codigo_fornecedor" type="button">Código fornecedor</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="quantidade" type="button">Quantidade</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="unidade" type="button">Unidade</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="empresa" type="button">Empresa</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="data" type="button">Data</button></th>
+            <th colspan="2" class="grupo-coluna">Valor</th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="previsao" type="button">Previsão</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="verba" type="button">Verba</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="entregue" type="button">Entregue</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="data_entrega" type="button">Data entrega</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="local_sala" type="button">Local / sala</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="local_armazenamento" type="button">Armário / freezer / geladeira</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="codigo" type="button">Codigo</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="prateleira" type="button">Prateleira</button></th>
+            <th rowspan="2"><button class="ordenar" data-ordenar="emprestado" type="button">Emprestado</button></th>
+            <th rowspan="2">Acoes</th>
+          </tr>
+          <tr>
+            <th><button class="ordenar" data-ordenar="valor_brl" type="button">R$</button></th>
+            <th><button class="ordenar" data-ordenar="valor_usd" type="button">US$</button></th>
           </tr>
         </thead>
         <tbody id="linhas"></tbody>
@@ -79,8 +90,10 @@
         <input id="marca" />
         <label for="data">Data</label>
         <input id="data" />
-        <label for="valor">Valor</label>
-        <input id="valor" />
+        <label for="valor-brl">Valor (R$)</label>
+        <input id="valor-brl" inputmode="decimal" />
+        <label for="valor-usd">Valor (US$)</label>
+        <input id="valor-usd" inputmode="decimal" />
         <label for="previsao">Previsão</label>
         <input id="previsao" />
         <label for="verba">Verba</label>

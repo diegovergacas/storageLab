@@ -15,7 +15,8 @@ const campoQuantidade = document.getElementById("quantidade");
 const campoUnidade = document.getElementById("unidade");
 const campoMarca = document.getElementById("marca");
 const campoData = document.getElementById("data");
-const campoValor = document.getElementById("valor");
+const campoValorBrl = document.getElementById("valor-brl");
+const campoValorUsd = document.getElementById("valor-usd");
 const campoPrevisao = document.getElementById("previsao");
 const campoVerba = document.getElementById("verba");
 const campoEntregue = document.getElementById("entregue");
@@ -25,9 +26,11 @@ const campoLocalArmazenamento = document.getElementById("local-armazenamento");
 const campoBarras = document.getElementById("barras");
 const rotuloBarras = document.getElementById("rotulo-barras");
 const erroForm = document.getElementById("erro-form");
+const tabelaWrap = document.querySelector(".tabela-wrap");
 
 let itens = [];
 let editando = null;
+let ordenacao = { campo: "", direcao: "asc" };
 
 function escapeHtml(valor) {
   return String(valor ?? "")
@@ -64,21 +67,64 @@ function camposBusca(item) {
     item.verba,
     item.entregue,
     item.quantidade,
+    item.local_sala,
+    item.local_armazenamento,
   ];
 }
 
 function filtrados() {
   const termo = busca.value.trim().toLowerCase();
-  if (!termo) {
-    return itens;
-  }
-  return itens.filter((item) =>
+  const lista = !termo
+    ? itens
+    : itens.filter((item) =>
     camposBusca(item).some((campo) =>
       String(campo || "")
         .toLowerCase()
         .includes(termo),
     ),
   );
+  if (!ordenacao.campo) {
+    return lista;
+  }
+  return [...lista].sort((primeiro, segundo) => compararItens(primeiro, segundo, ordenacao));
+}
+
+function compararItens(primeiro, segundo, ordem) {
+  const a = primeiro[ordem.campo];
+  const b = segundo[ordem.campo];
+  const numeroA = numeroParaOrdenar(a);
+  const numeroB = numeroParaOrdenar(b);
+  let resultado;
+  if (numeroA !== null && numeroB !== null) {
+    resultado = numeroA - numeroB;
+  } else {
+    resultado = String(a || "").localeCompare(String(b || ""), "pt-BR", {
+      numeric: true,
+      sensitivity: "base",
+    });
+  }
+  return ordem.direcao === "asc" ? resultado : -resultado;
+}
+
+function numeroParaOrdenar(valor) {
+  if (valor === undefined || valor === null || String(valor).trim() === "") {
+    return null;
+  }
+  const texto = String(valor).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return Date.parse(`${texto}T00:00:00`);
+  }
+  const numero = Number(texto.replace("R$", "").replaceAll(".", "").replace(",", ".").trim());
+  return Number.isNaN(numero) ? null : numero;
+}
+
+function atualizarCabecalhos() {
+  document.querySelectorAll(".ordenar").forEach((botao) => {
+    const ativo = botao.dataset.ordenar === ordenacao.campo;
+    botao.classList.toggle("ativo", ativo);
+    botao.dataset.direcao = ativo ? ordenacao.direcao : "";
+    botao.setAttribute("aria-sort", ativo ? (ordenacao.direcao === "asc" ? "ascending" : "descending") : "none");
+  });
 }
 
 function corpoBase() {
@@ -93,7 +139,8 @@ function corpoBase() {
     codigo_fornecedor: campoCodigoFornecedor.value.trim(),
     unidade: campoUnidade.value.trim(),
     data: campoData.value.trim(),
-    valor: campoValor.value.trim(),
+    valor_brl: campoValorBrl.value.trim(),
+    valor_usd: campoValorUsd.value.trim(),
     previsao: campoPrevisao.value.trim(),
     verba: campoVerba.value.trim(),
     entregue: campoEntregue.value.trim(),
@@ -105,6 +152,7 @@ function corpoBase() {
 
 function desenhar() {
   const lista = filtrados();
+  atualizarCabecalhos();
   const prateleira = itens.reduce((soma, item) => soma + Number(item.prateleira || 0), 0);
   const emprestado = itens.reduce((soma, item) => soma + Number(item.emprestado || 0), 0);
   const pendentes = itens.filter((item) => item.pendente_codigo || String(item.codigo || "").startsWith("PLAN-")).length;
@@ -120,13 +168,14 @@ function desenhar() {
       return `
         <tr>
           <td>${escapeHtml(item.solicitante || "—")}</td>
-          <td>${escapeHtml(item.nome)}</td>
+          <td><button class="abrir-item" data-acao="editar" data-codigo="${escapeHtml(item.codigo)}">${escapeHtml(item.nome)}</button></td>
           <td>${escapeHtml(item.codigo_fornecedor || "—")}</td>
           <td>${escapeHtml(quantidadeTexto(item.quantidade))}</td>
           <td>${escapeHtml(item.unidade || "—")}</td>
           <td>${escapeHtml(item.empresa || item.marca || "—")}</td>
           <td>${escapeHtml(item.data || "—")}</td>
-          <td>${escapeHtml(item.valor || "—")}</td>
+          <td>${escapeHtml(item.valor_brl || item.valor || "—")}</td>
+          <td>${escapeHtml(item.valor_usd || "—")}</td>
           <td>${escapeHtml(item.previsao || "—")}</td>
           <td>${escapeHtml(item.verba || "—")}</td>
           <td>${escapeHtml(item.entregue || "—")}</td>
@@ -191,7 +240,8 @@ function abrirFormulario(item) {
   campoUnidade.value = item ? item.unidade || "" : "";
   campoMarca.value = item ? item.empresa || item.marca || "" : "";
   campoData.value = item ? item.data || "" : "";
-  campoValor.value = item ? item.valor || "" : "";
+  campoValorBrl.value = item ? item.valor_brl || item.valor || "" : "";
+  campoValorUsd.value = item ? item.valor_usd || "" : "";
   campoPrevisao.value = item ? item.previsao || "" : "";
   campoVerba.value = item ? item.verba || "" : "";
   campoEntregue.value = item ? item.entregue || "" : "";
@@ -217,7 +267,26 @@ linhas.addEventListener("click", (evento) => {
 
 busca.addEventListener("input", desenhar);
 
+document.querySelector("thead").addEventListener("click", (evento) => {
+  const botao = evento.target.closest("button[data-ordenar]");
+  if (!botao) {
+    return;
+  }
+  const campo = botao.dataset.ordenar;
+  ordenacao = {
+    campo,
+    direcao: ordenacao.campo === campo && ordenacao.direcao === "asc" ? "desc" : "asc",
+  };
+  desenhar();
+});
+
 document.getElementById("novo").onclick = () => abrirFormulario(null);
+document.getElementById("colunas-esquerda").onclick = () => {
+  tabelaWrap.scrollBy({ left: -600, behavior: "smooth" });
+};
+document.getElementById("colunas-direita").onclick = () => {
+  tabelaWrap.scrollBy({ left: 600, behavior: "smooth" });
+};
 document.getElementById("importar").onclick = async () => {
   mostrarAviso("");
   try {

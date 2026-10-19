@@ -4,6 +4,8 @@ import { estado } from "./estado.js";
 import { escapeHtml, tela } from "./html.js";
 import { iniciarScanner, pararLeitor, pedirCamera } from "./scanner.js";
 
+let itensPendentes = [];
+
 export function inicio() {
   tela(`
     <p class="hero">Aponte o celular para o codigo. Se o produto ja passou pelo lab, vai para a conferencia. Se for a primeira vez, tira foto do rotulo.</p>
@@ -102,8 +104,24 @@ async function receberCodigo(codigo, tipo) {
     );
     conferencia(item);
   } catch {
-    cadastroNovo();
+    escolherCadastro();
   }
+}
+
+function escolherCadastro() {
+  tela(`
+    <div class="card">
+      <p class="kicker warn">Nao cadastrado</p>
+      <h2>Como deseja cadastrar?</h2>
+      <p class="meta">O codigo ${escapeHtml(estado.codigo)} ainda nao esta no estoque.</p>
+    </div>
+    <button class="btn btn-primary" id="cadastrar-manual" style="margin-top:16px">Cadastrar na mao</button>
+    <button class="btn btn-ghost" id="cadastrar-foto">Cadastrar com foto do rotulo</button>
+    <button class="btn btn-ghost" id="voltar">Ler outro codigo</button>
+  `);
+  document.getElementById("cadastrar-manual").onclick = () => cadastroNovo(false);
+  document.getElementById("cadastrar-foto").onclick = () => cadastroNovo(true);
+  document.getElementById("voltar").onclick = inicio;
 }
 
 function conferencia(item) {
@@ -248,29 +266,59 @@ function editarItem(item) {
   document.getElementById("cancelar-edicao").onclick = () => conferencia(item);
 }
 
-function cadastroNovo() {
+function cadastroNovo(abrirFoto = false) {
   estado.fotoUrl = "";
   estado.ocr = { nome: "", marca: "" };
   tela(`
     <div class="card">
       <p class="kicker warn">Nao cadastrado</p>
-      <h2>Foto do rotulo</h2>
-      <p class="meta">O codigo ${escapeHtml(estado.codigo)} nao esta no estoque. Se ja veio da planilha de compras, ligue ao produto. Se for novo, tire foto do rotulo.</p>
+      <h2>${abrirFoto ? "Foto do rotulo" : "Cadastrar na mao"}</h2>
+      <p class="meta">O codigo ${escapeHtml(estado.codigo)} nao esta no estoque. Se ja veio da planilha de compras, ligue ao produto. Se for novo, preencha os dados abaixo.</p>
       <label for="codigo">Codigo</label>
       <input id="codigo" value="${escapeHtml(estado.codigo)}" readonly />
       <label for="catalogo">Ja esta no catalogo da planilha?</label>
       <select id="catalogo">
         <option value="">Nao, e um produto novo</option>
       </select>
-      <label for="nome">Nome</label>
+      <label for="solicitante">Solicitante</label>
+      <input id="solicitante" autocomplete="name" />
+      <label for="nome">Reagente / Material</label>
       <input id="nome" autocomplete="off" />
+      <label for="codigo-fornecedor">Codigo do fornecedor</label>
+      <input id="codigo-fornecedor" autocomplete="off" />
+      <label for="quantidade">Quantidade</label>
+      <input id="quantidade" inputmode="decimal" />
+      <label for="unidade">Unidade</label>
+      <input id="unidade" autocomplete="off" />
       <label for="marca">Empresa / marca</label>
       <input id="marca" autocomplete="off" />
-      <p id="ocr-status" class="ocr-status">Abrindo a camera do rotulo...</p>
+      <label for="data">Data</label>
+      <input id="data" type="date" />
+      <label for="valor-brl">Valor (R$)</label>
+      <input id="valor-brl" inputmode="decimal" />
+      <label for="valor-usd">Valor (US$)</label>
+      <input id="valor-usd" inputmode="decimal" />
+      <label for="previsao">Previsao</label>
+      <input id="previsao" autocomplete="off" />
+      <label for="verba">Verba</label>
+      <input id="verba" autocomplete="off" />
+      <label for="entregue">Entregue</label>
+      <select id="entregue">
+        <option value="">Nao informado</option>
+        <option value="Não">Não</option>
+        <option value="Sim">Sim</option>
+      </select>
+      <label for="data-entrega">Data da entrega</label>
+      <input id="data-entrega" type="date" />
+      <label for="local-sala">Local / sala</label>
+      <input id="local-sala" autocomplete="off" />
+      <label for="local-armazenamento">Armario, freezer ou geladeira</label>
+      <input id="local-armazenamento" autocomplete="off" />
+      <p id="ocr-status" class="ocr-status">A foto do rotulo e opcional.</p>
       <img id="preview-foto" class="photo hidden-file" alt="Rotulo" />
     </div>
     <input id="arquivo" class="hidden-file" type="file" accept="image/*" capture="environment" />
-    <button class="btn btn-ghost" id="foto" style="margin-top:16px">Tirar outra foto</button>
+    <button class="btn btn-ghost" id="foto" style="margin-top:16px">${abrirFoto ? "Tirar outra foto" : "Adicionar foto do rotulo"}</button>
     <button class="btn btn-primary" id="salvar">Salvar no estoque</button>
     <button class="btn btn-ghost" id="voltar">Cancelar</button>
   `);
@@ -284,7 +332,9 @@ function cadastroNovo() {
   document.getElementById("salvar").onclick = salvarNovo;
   document.getElementById("voltar").onclick = inicio;
   carregarPendentes();
-  arquivo.click();
+  if (abrirFoto) {
+    arquivo.click();
+  }
 }
 
 async function carregarPendentes() {
@@ -294,17 +344,63 @@ async function carregarPendentes() {
   }
   try {
     const dados = await api("/api/itens/pendentes");
-    const itens = dados.itens || [];
+    itensPendentes = dados.itens || [];
     select.innerHTML = [
       '<option value="">Nao, e um produto novo</option>',
-      ...itens.map(
+      ...itensPendentes.map(
         (item) =>
           `<option value="${escapeHtml(item.codigo)}">${escapeHtml(item.nome)} — ${escapeHtml(item.empresa || item.marca || "")}</option>`,
       ),
     ].join("");
+    select.onchange = () => {
+      const item = itensPendentes.find((atual) => atual.codigo === select.value);
+      if (item) {
+        preencherCadastro(item);
+      }
+    };
   } catch {
     select.innerHTML = '<option value="">Nao, e um produto novo</option>';
   }
+}
+
+function preencherCadastro(item) {
+  document.getElementById("nome").value = item.nome || "";
+  document.getElementById("marca").value = item.empresa || item.marca || "";
+  document.getElementById("solicitante").value = item.solicitante || "";
+  document.getElementById("codigo-fornecedor").value = item.codigo_fornecedor || "";
+  document.getElementById("quantidade").value = item.quantidade || "";
+  document.getElementById("unidade").value = item.unidade || "";
+  document.getElementById("data").value = item.data || "";
+  document.getElementById("valor-brl").value = item.valor_brl || (item.valor_usd ? "" : item.valor || "");
+  document.getElementById("valor-usd").value = item.valor_usd || "";
+  document.getElementById("previsao").value = item.previsao || "";
+  document.getElementById("verba").value = item.verba || "";
+  document.getElementById("entregue").value = item.entregue || "";
+  document.getElementById("data-entrega").value = item.data_entrega || "";
+  document.getElementById("local-sala").value = item.local_sala || "";
+  document.getElementById("local-armazenamento").value = item.local_armazenamento || "";
+}
+
+function dadosCadastro() {
+  const marca = document.getElementById("marca").value.trim();
+  return {
+    nome: document.getElementById("nome").value.trim(),
+    marca,
+    empresa: marca,
+    solicitante: document.getElementById("solicitante").value.trim(),
+    codigo_fornecedor: document.getElementById("codigo-fornecedor").value.trim(),
+    quantidade: document.getElementById("quantidade").value.trim(),
+    unidade: document.getElementById("unidade").value.trim(),
+    data: document.getElementById("data").value,
+    valor_brl: document.getElementById("valor-brl").value.trim(),
+    valor_usd: document.getElementById("valor-usd").value.trim(),
+    previsao: document.getElementById("previsao").value.trim(),
+    verba: document.getElementById("verba").value.trim(),
+    entregue: document.getElementById("entregue").value,
+    data_entrega: document.getElementById("data-entrega").value,
+    local_sala: document.getElementById("local-sala").value.trim(),
+    local_armazenamento: document.getElementById("local-armazenamento").value.trim(),
+  };
 }
 
 async function processarFoto(arquivo) {
@@ -340,15 +436,16 @@ async function processarFoto(arquivo) {
 
 async function salvarNovo() {
   const interno = document.getElementById("catalogo")?.value;
-  const nome = document.getElementById("nome").value.trim();
-  const marca = document.getElementById("marca").value.trim();
+  const dados = dadosCadastro();
+  const { nome, marca } = dados;
   if (!interno && !nome) {
     document.getElementById("nome").focus();
     return;
   }
   document.getElementById("salvar").disabled = true;
-  const item = interno
-    ? await api("/api/itens/vincular", {
+  let item;
+  if (interno) {
+    const vinculado = await api("/api/itens/vincular", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -356,19 +453,24 @@ async function salvarNovo() {
           codigo: estado.codigo,
           tipo: estado.tipo,
         }),
-      })
-    : await api("/api/itens", {
+      });
+    item = await api(`/api/itens/${encodeURIComponent(vinculado.codigo)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    });
+  } else {
+    item = await api("/api/itens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           codigo: estado.codigo,
           tipo: estado.tipo,
-          nome,
-          marca,
-          empresa: marca,
+          ...dados,
           foto: estado.fotoUrl,
         }),
       });
+  }
   tela(`
     <div class="card">
       <p class="kicker">Cadastrado</p>
