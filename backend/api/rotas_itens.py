@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.dependencias import get_repo
-from backend.api.esquemas import ItemEdicao, ItemNovo
+from backend.api.esquemas import ItemEdicao, ItemNovo, QuantidadeMovimento, VincularCodigo
 from backend.persistencia.repositorio_json import RepositorioJson
 
 router = APIRouter(prefix="/api/itens", tags=["itens"])
@@ -10,6 +10,27 @@ router = APIRouter(prefix="/api/itens", tags=["itens"])
 @router.get("")
 def listar(repo: RepositorioJson = Depends(get_repo)) -> dict:
     return {"itens": repo.listar()}
+
+
+@router.get("/pendentes")
+def pendentes(repo: RepositorioJson = Depends(get_repo)) -> dict:
+    return {"itens": repo.listar_pendentes()}
+
+
+@router.post("/importar-planilha")
+def importar_planilha(repo: RepositorioJson = Depends(get_repo)) -> dict:
+    return repo.importar_planilha(forcar=True)
+
+
+@router.post("/vincular")
+def vincular(dados: VincularCodigo, repo: RepositorioJson = Depends(get_repo)) -> dict:
+    try:
+        item = repo.vincular(dados.codigo_interno, dados.codigo, dados.tipo, dados.entrada)
+    except ValueError as erro:
+        raise HTTPException(status_code=409, detail=str(erro)) from erro
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item nao encontrado")
+    return item
 
 
 @router.get("/localizar")
@@ -29,8 +50,12 @@ def buscar(codigo: str, repo: RepositorioJson = Depends(get_repo)) -> dict:
 
 
 @router.post("/{codigo}/entrada")
-def entrada(codigo: str, repo: RepositorioJson = Depends(get_repo)) -> dict:
-    item = repo.entrada(codigo)
+def entrada(
+    codigo: str,
+    dados: QuantidadeMovimento | None = None,
+    repo: RepositorioJson = Depends(get_repo),
+) -> dict:
+    item = repo.entrada(codigo, dados.quantidade if dados else 1)
     if item is None:
         raise HTTPException(status_code=404, detail="Item nao encontrado")
     return item
@@ -75,7 +100,7 @@ def editar(
     campos: ItemEdicao,
     repo: RepositorioJson = Depends(get_repo),
 ) -> dict:
-    item = repo.editar(codigo, campos.model_dump())
+    item = repo.editar(codigo, campos.model_dump(exclude_unset=True))
     if item is None:
         raise HTTPException(status_code=404, detail="Item nao encontrado")
     return item

@@ -21,7 +21,7 @@ export function checksumGs1(digitos) {
 
 export function codigoChave(codigo) {
   const bruto = compactar(codigo);
-  if (bruto.includes("://")) {
+  if (bruto.includes("://") || bruto.toUpperCase().startsWith("PLAN-")) {
     return bruto;
   }
   const digitos = soDigitos(bruto);

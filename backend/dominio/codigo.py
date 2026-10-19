@@ -21,7 +21,7 @@ def checksum_gs1(digitos: str) -> bool:
 
 def codigo_chave(codigo: str) -> str:
     bruto = compactar(codigo)
-    if "://" in bruto:
+    if "://" in bruto or bruto.upper().startswith("PLAN-"):
         return bruto
     digitos = _so_digitos(bruto)
     if len(digitos) == 12 and checksum_gs1(digitos):
@@ -34,6 +34,8 @@ def codigo_chave(codigo: str) -> str:
 def variantes(codigo: str) -> set[str]:
     chave = codigo_chave(codigo)
     valores = {chave, compactar(codigo)}
+    if chave.upper().startswith("PLAN-"):
+        return {v for v in valores if v}
     digitos = _so_digitos(chave)
     if digitos:
         valores.add(digitos)

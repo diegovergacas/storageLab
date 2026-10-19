@@ -18,23 +18,27 @@ celular ou PC  -->  frontend  -->  backend/api  -->  dominio  -->  persistencia 
 - `backend/api/` — rotas HTTP
 - `backend/dominio/` — código de barras, item, rótulo
 - `backend/servicos/ocr.py` — pytesseract no PC
-- `backend/persistencia/` — JSON hoje; planilha do Drive fica para depois
+- `backend/persistencia/` — JSON hoje; a planilha `Pedidos de Compra Labpesq.xlsx` sementeia o catálogo. Drive fica para depois.
 
-## Dois arquivos de dados
+## Arquivos de dados
 
 | Arquivo | Papel |
 |---|---|
-| `dados/catalogo.json` | Eterno: código, nome, marca, foto. Nunca some. |
+| `dados/catalogo.json` | Eterno: código de leitura + colunas da planilha, incluindo código do fornecedor, unidade, entrega e localização. Nunca some. |
 | `dados/estoque.json` | Quantidade agora: prateleira e emprestado. |
+| `dados/pedidos.json` | Pedidos importados da planilha (não é estoque). |
 
 ## APIs principais
 
 - `GET /api/itens` — catálogo + quantidades
+- `GET /api/itens/pendentes` — produtos da planilha ainda sem código de barras
+- `POST /api/itens/importar-planilha` — relê a planilha (idempotente)
+- `POST /api/itens/vincular` — liga um `PLAN-` ao código de barras lido
 - `GET /api/itens/localizar?codigo=`
 - `POST /api/itens` — primeiro cadastro (grava no catálogo)
-- `POST /api/itens/{codigo}/entrada` — +1
+- `POST /api/itens/{codigo}/entrada` — soma a quantidade informada à prateleira
 - `POST /api/itens/{codigo}/emprestar`
 - `POST /api/itens/{codigo}/devolver`
 - `POST /api/itens/{codigo}/acabou`
-- `PATCH /api/itens/{codigo}` — editar nome/marca
+- `PATCH /api/itens/{codigo}` — editar nome/empresa
 - `POST /api/ocr` — foto do rótulo

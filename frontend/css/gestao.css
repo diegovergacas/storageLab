@@ -27,7 +27,7 @@ body {
 .resumo,
 .tabela-wrap,
 .aviso {
-  width: min(1100px, calc(100% - 40px));
+  width: min(1480px, calc(100% - 24px));
   margin-left: auto;
   margin-right: auto;
 }
@@ -71,7 +71,8 @@ nav a.atual {
 }
 
 .toolbar input,
-dialog input {
+dialog input,
+dialog select {
   min-height: 48px;
   padding: 0 14px;
   border: 1px solid var(--line);
@@ -148,10 +149,16 @@ table {
 
 th,
 td {
-  padding: 12px 14px;
+  padding: 10px 12px;
   text-align: left;
   border-top: 1px solid var(--line);
   vertical-align: top;
+  white-space: nowrap;
+}
+
+td:nth-child(2) {
+  white-space: normal;
+  min-width: 180px;
 }
 
 th {
@@ -181,7 +188,9 @@ dialog {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--paper);
-  width: min(420px, 92vw);
+  width: min(480px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
   padding: 22px;
 }
 
@@ -196,7 +205,8 @@ dialog label {
   font-weight: 700;
 }
 
-dialog input {
+dialog input,
+dialog select {
   width: 100%;
 }
 

@@ -27,13 +27,13 @@ O celular **não mostra** gestão nem a lista da prateleira. Isso é de propósi
 ## O que o celular faz
 
 1. Abre a câmera e lê **qualquer código de barras ou QR** (não só EAN-13).
-2. Se o código **já passou pelo lab**, vai para a **conferência**: mostra nome, marca, quanto tem na prateleira e quanto está emprestado.
-3. Se o código **nunca esteve no catálogo**, tira **foto do rótulo**. O PC lê o texto com **pytesseract** (OCR) e sugere nome e marca. A pessoa **corrige no próprio smartphone** e salva.
+2. Se o código **já passou pelo lab**, vai para a **conferência**: mostra o cadastro, a localização, quanto tem na prateleira e quanto está emprestado. O operador informa a quantidade recebida e pode editar os dados se necessário.
+3. Se o código **nunca esteve no catálogo**, pergunta se o produto **já veio da planilha de compras**. Se sim, liga o código de barras a esse nome e não cria duplicata. Se for novo, tira **foto do rótulo**. O PC lê o texto com **pytesseract** (OCR) e sugere nome e marca. A pessoa **corrige no próprio smartphone** e salva.
 4. Sem código não grava. O código é a identidade. Assim, da próxima vez, só a leitura resolve.
 
 Na conferência dá para:
 
-- confirmar **entrada (+1)** — chegou mais um frasco
+- confirmar **entrada** — informa quantos frascos chegaram e soma essa quantidade à prateleira
 - marcar **Acabou (-1)** — saiu da prateleira, acabou
 - ler outro código
 
@@ -47,10 +47,11 @@ A câmera no Android só abre em **HTTPS**. Por isso o servidor local usa certif
 
 No navegador, em `/gestao`, quem gerencia:
 
-- vê o catálogo (mesmo com prateleira zerada)
-- busca por código, nome ou marca
-- cadastra na mão (código + nome; a marca é opcional)
-- **+1**, **Emprestar**, **Devolver**, **Acabou**, **Editar**
+- vê o estoque-base com as colunas da planilha, incluindo código do fornecedor, unidade, data de entrega e localização
+- busca por código, nome, empresa, solicitante ou verba
+- atualiza esses campos a partir da planilha e liga código de barras a um `PLAN-`
+- cadastra na mão com os mesmos campos
+- **+1**, **Emprestar**, **Devolver**, **Acabou**, **Editar** — isso mexe na **prateleira** (frasco), não na Quantidade da planilha
 
 ```
 +1          prateleira +1
@@ -69,8 +70,9 @@ Há dois arquivos:
 
 | Arquivo | Papel |
 |---|---|
-| `dados/catalogo.json` | O que **já teve no lab**: código, nome, marca, foto. Não some. |
+| `dados/catalogo.json` | O que **já teve no lab**: código, nome, empresa, foto. Não some. |
 | `dados/estoque.json` | O que **tem agora**: prateleira e emprestado. |
+| `dados/pedidos.json` | Pedidos da planilha de compras (não vira quantidade de prateleira). |
 
 Se o produto acabou e depois chega de novo, o celular lê o mesmo código e **não pede cadastro novo**. Só soma 1 na prateleira. O histórico de “já conhecemos esse reagente” fica.
 
