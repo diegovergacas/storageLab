@@ -20,10 +20,26 @@
       </div>
       <nav>
         <a href="/">Celular</a>
+        <a href="/pedidos">Pedidos</a>
         <a class="atual" href="/gestao">Gestão</a>
       </nav>
     </header>
 
+    <section class="perfis-dev" aria-label="Perfil temporário de desenvolvimento">
+      <span>Perfil para desenvolvimento:</span>
+      <button type="button" data-perfil="ALUNO">Aluno</button>
+      <button type="button" data-perfil="TECNICO">Técnico</button>
+      <button type="button" data-perfil="GERENTE">Gerente</button>
+      <button type="button" data-perfil="DESENVOLVEDOR">Desenvolvedor</button>
+    </section>
+
+    <section class="acesso-aluno" id="acesso-aluno" hidden>
+      <h2>Acesso restrito</h2>
+      <p>O perfil Aluno não pode consultar nem gerenciar o material em estoque.</p>
+      <a href="/">Voltar para pedidos e recebimentos</a>
+    </section>
+
+    <div id="gestao-conteudo" hidden>
     <section class="toolbar">
       <input id="busca" type="search" placeholder="Buscar nome, empresa, solicitante, verba..." />
       <button class="btn btn-ghost" id="importar">Atualizar da planilha</button>
@@ -115,8 +131,10 @@
         </div>
       </form>
     </dialog>
+    </div>
 
     <script src="/js/api.js" type="module"></script>
+    <script src="/js/perfil-desenvolvimento.js" type="module"></script>
     <script src="/js/gestao.js" type="module"></script>
   </body>
 </html>

@@ -86,6 +86,46 @@ dialog select {
   flex: 1;
 }
 
+.perfis-dev {
+  width: min(1480px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 auto 18px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.perfis-dev button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--lab);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.perfis-dev button.ativo {
+  background: var(--lab);
+  color: #f6f1e6;
+}
+
+.acesso-aluno {
+  width: min(720px, calc(100% - 24px));
+  margin: 18px auto;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.acesso-aluno h2 { margin-top: 0; }
+.acesso-aluno a { color: var(--lab); font-weight: 700; }
+
 .btn {
   min-height: 48px;
   padding: 0 16px;

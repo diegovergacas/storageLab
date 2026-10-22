@@ -1,0 +1,99 @@
+:root {
+  --ink: #1b2218;
+  --paper: #f3eee3;
+  --card: #fffaf1;
+  --line: #d8cfbe;
+  --lab: #24362d;
+  --warn: #9d3f1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: system-ui, sans-serif;
+}
+
+header, main { width: min(760px, calc(100% - 28px)); margin: auto; }
+header { padding: 24px 0 12px; }
+header p { margin: 0; color: #9d3f1c; font-size: 0.8rem; text-transform: uppercase; }
+h1, h2 { margin: 4px 0 14px; font-family: Georgia, serif; }
+nav a { margin-right: 16px; color: var(--lab); font-weight: 700; }
+main { padding-bottom: 32px; }
+
+.card {
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+label { display: block; margin: 10px 0; font-weight: 700; }
+
+input, select, textarea {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 5px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+textarea { min-height: 72px; }
+
+button {
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--lab);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pedido { padding: 14px 0; border-top: 1px solid var(--line); }
+.pedido:first-child { border-top: 0; }
+.pedido h3 { margin: 0 0 5px; }
+.muted { color: #5d6756; }
+
+.status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #e9e2d2;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.acoes, .perfis-dev { display: flex; flex-wrap: wrap; gap: 8px; }
+.acoes button { background: #355245; }
+.perigo { border-color: #d99b82; }
+.perigo button { background: var(--warn); }
+.aviso { margin: 7px 0; padding: 9px; border-radius: 8px; background: #efe4cb; }
+
+.usuario-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.usuario-linha input,
+.usuario-linha select,
+.usuario-linha button,
+.perfis-dev button { margin: 0; }
+
+.perfis-dev button { border: 1px solid var(--line); background: #fff; color: var(--lab); }
+.perfis-dev button.ativo { background: var(--lab); color: #fff; }
+
+@media (max-width: 520px) {
+  .usuario-linha { flex-wrap: wrap; }
+}

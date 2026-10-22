@@ -290,3 +290,37 @@ select {
 .hidden-file {
   display: none;
 }
+
+.mobile-card {
+  margin: 8px 0 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card);
+}
+
+.perfis-mobile {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.perfil-btn,
+.acao-pedido {
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--lab);
+  font: inherit;
+  font-weight: 700;
+}
+
+.perfil-btn.ativo { background: var(--lab); color: #f6f1e6; }
+.aviso-mobile { margin: 10px 0 0; padding: 10px; border-radius: 10px; background: #efe7d6; color: var(--lab); }
+.pedido-mobile { display: grid; gap: 5px; padding: 13px 0; border-top: 1px solid var(--line); }
+.pedido-mobile:first-child { border-top: 0; }
+.pedido-mobile span, .pedido-mobile small { color: var(--muted); }
+.pedido-mobile div { display: flex; gap: 8px; margin-top: 3px; }
+.acao-pedido { min-height: 36px; }
