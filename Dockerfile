@@ -16,8 +16,6 @@ COPY backend ./backend
 COPY frontend ./frontend
 COPY ["LISTA INSUMOS LAB PESQ.xlsx", "./"]
 
-RUN mkdir -p /app/dados/fotos
-
 EXPOSE 8000
 
 CMD ["python", "-m", "backend"]
