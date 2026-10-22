@@ -9,6 +9,8 @@ from backend.api.rotas_fotos import router as rotas_fotos
 from backend.api.rotas_itens import router as rotas_itens
 from backend.api.rotas_ocr import router as rotas_ocr
 from backend.api.rotas_rede import router as rotas_rede
+from backend.api.rotas_solicitacoes import router as rotas_solicitacoes
+from backend.api.rotas_usuarios import router as rotas_usuarios
 from backend.persistencia.caminhos import FRONTEND, FOTOS
 
 FOTOS.mkdir(parents=True, exist_ok=True)
@@ -26,6 +28,8 @@ app.include_router(rotas_itens)
 app.include_router(rotas_fotos)
 app.include_router(rotas_ocr)
 app.include_router(rotas_rede)
+app.include_router(rotas_usuarios)
+app.include_router(rotas_solicitacoes)
 app.mount("/css", StaticFiles(directory=FRONTEND / "css"), name="css")
 app.mount("/js", StaticFiles(directory=FRONTEND / "js"), name="js")
 app.mount("/fotos", StaticFiles(directory=FOTOS), name="fotos")
@@ -39,3 +43,8 @@ def home() -> FileResponse:
 @app.get("/gestao")
 def gestao() -> FileResponse:
     return FileResponse(FRONTEND / "gestao.html")
+
+
+@app.get("/pedidos")
+def pedidos() -> FileResponse:
+    return FileResponse(FRONTEND / "pedidos.html")

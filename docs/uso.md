@@ -1,5 +1,24 @@
 # Uso
 
+## Docker Desktop (recomendado)
+
+Na pasta acima desta (`storageLab/`), execute:
+
+```powershell
+docker compose up --build -d
+```
+
+O aplicativo estará em `https://localhost:8000`; a gestão fica em
+`https://localhost:8000/gestao`. Os arquivos gerados pelo aplicativo são
+persistidos em `storageLab/dados/`, fora do contêiner.
+
+Para acompanhar ou parar o serviço:
+
+```powershell
+docker compose logs -f
+docker compose down
+```
+
 ## Subir o servidor (neste PC)
 
 ```bash
@@ -22,11 +41,13 @@ Celular e PC precisam estar na mesma rede Wi-Fi. O certificado é local: no Chro
 Para quem usa o lab no dia a dia.
 
 1. Abrir o endereço HTTPS do PC no Chrome do Android.
-2. **Ler codigo** (ou digitar).
-3. Se o produto já está no catálogo: conferência, depois **+1**, **Acabou (-1)** ou ler outro.
-4. Se o código não existir: ligar a um produto da planilha, ou foto do rótulo (OCR), corrigir nome/empresa e salvar.
+2. Escolher temporariamente o perfil de desenvolvimento: Aluno, Técnico,
+   Gerente ou Desenvolvedor.
+3. Criar pedidos e registrar recebimentos.
+4. Técnico, gerente e desenvolvedor também podem cadastrar os dados do pedido.
 
-A tela do celular não mostra a lista do estoque nem a gestão.
+A leitura e o cadastro por código de barras foram removidos desta tela nesta
+fase. Eles poderão voltar em um fluxo futuro, se necessário.
 
 ## Gestão no PC (`/gestao`)
 

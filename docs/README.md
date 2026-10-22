@@ -9,5 +9,6 @@ Controle de estoque do laboratório: celular para leitura e cadastro, PC para ge
 | [o-que-a-aplicacao-faz.md](o-que-a-aplicacao-faz.md) | O que o StorageLab faz, do jeito que entendemos até agora |
 | [uso.md](uso.md) | Como subir o app e usar no celular e no PC |
 | [arquitetura.md](arquitetura.md) | Pastas, APIs e os dois arquivos de dados |
+| [pedidos-e-perfis.md](pedidos-e-perfis.md) | Fluxo de compras, recebimento e permissões |
 
 Coloque aqui novos textos (manual do lab, decisões, prints). Não misture documentação com código em `backend/` ou `frontend/`.

@@ -1,0 +1,8 @@
+.git
+.venv
+.ferramentas
+__pycache__
+*.pyc
+dados
+docs
+"Pedidos de Compra Labpesq.xlsx"

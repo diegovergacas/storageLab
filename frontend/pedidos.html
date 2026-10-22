@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StorageLab — Pedidos</title>
+    <link rel="stylesheet" href="/css/pedidos.css" />
+  </head>
+  <body>
+    <header><p>Laboratório</p><h1>Pedidos e recebimentos</h1><nav><a href="/">Estoque</a><a href="/gestao">Gestão</a></nav></header>
+    <main>
+      <section class="card"><p class="muted">Perfil temporário de desenvolvimento</p><div class="perfis-dev" aria-label="Perfil temporário"><button type="button" data-perfil="ALUNO">Aluno</button><button type="button" data-perfil="TECNICO">Técnico</button><button type="button" data-perfil="GERENTE">Gerente</button><button type="button" data-perfil="DESENVOLVEDOR">Desenvolvedor</button></div><p id="perfil" class="muted"></p><div id="avisos"></div></section>
+      <section class="card"><h2>Fazer pedido</h2><form id="novo-pedido"><label>Insumo<input id="pedido-nome" required /></label><label>Quantidade<input id="pedido-quantidade" type="number" min="1" value="1" required /></label><label>Unidade<input id="pedido-unidade" value="frasco" /></label><label>Observação<textarea id="pedido-observacao"></textarea></label><button>Enviar pedido</button></form></section>
+      <section class="card"><h2>Pedidos</h2><p id="mensagem" role="status"></p><div id="lista"></div></section>
+      <section class="card" id="usuarios-card" hidden><h2>Usuários</h2><form id="novo-usuario"><label>Nome<input id="usuario-nome" required /></label><label>Perfil<select id="usuario-perfil"><option>ALUNO</option><option>TECNICO</option><option>GERENTE</option><option>DESENVOLVEDOR</option></select></label><button>Criar usuário</button></form><div id="lista-usuarios"></div></section>
+      <section class="card perigo" id="dados-card" hidden><h2>Desenvolvedor</h2><p>Apaga catálogo, estoque e pedidos criados no sistema. Esta ação não pode ser desfeita.</p><button id="apagar-dados">Apagar dados operacionais</button></section>
+    </main>
+    <script src="/js/pedidos.js" type="module"></script>
+  </body>
+</html>

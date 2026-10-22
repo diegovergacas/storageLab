@@ -1,6 +1,38 @@
 from pydantic import BaseModel, Field
 
 
+class UsuarioNovo(BaseModel):
+    nome: str = Field(min_length=1)
+    perfil: str
+
+
+class UsuarioEdicao(BaseModel):
+    nome: str = Field(min_length=1)
+    perfil: str
+
+
+class SolicitacaoNova(BaseModel):
+    usuario_id: str = Field(min_length=1)
+    nome: str = Field(min_length=1)
+    quantidade: int = Field(default=1, ge=1)
+    unidade: str = "frasco"
+    observacao: str = ""
+
+
+class SolicitacaoCadastro(BaseModel):
+    usuario_id: str = Field(min_length=1)
+    marca: str = ""
+    codigo_fornecedor: str = ""
+    local_sala: str = ""
+    local_armazenamento: str = ""
+
+
+class SolicitacaoRecebimento(BaseModel):
+    usuario_id: str = Field(min_length=1)
+    quantidade_recebida: int = Field(default=1, ge=1)
+    codigo: str = ""
+
+
 class ItemNovo(BaseModel):
     codigo: str = Field(min_length=1)
     tipo: str = "desconhecido"
