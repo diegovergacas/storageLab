@@ -1,8 +1,10 @@
 import json
+import threading
 import uuid
 from pathlib import Path
 
 from backend.dominio.codigo import variantes
+from backend.dominio.categorias import normalizar_categoria
 from backend.dominio.item import CAMPOS_BASE, agora, compactar_codigo, item_visto, posicao_estoque, produto_catalogo
 from backend.persistencia.planilha_compras import PLANILHA, ler_compras
 
@@ -29,6 +31,7 @@ class RepositorioJson:
         self.usuarios_path = usuarios or catalogo.with_name("usuarios.json")
         self.solicitacoes_path = solicitacoes or catalogo.with_name("solicitacoes.json")
         self.fotos = fotos
+        self._lock = threading.RLock()
         self.catalogo_path.parent.mkdir(parents=True, exist_ok=True)
         self.fotos.mkdir(parents=True, exist_ok=True)
         self._migrar_se_preciso()
@@ -320,15 +323,68 @@ class RepositorioJson:
         return usuario
 
     def listar_solicitacoes(self) -> list[dict]:
-        return sorted(self._solicitacoes(), key=lambda item: item["criado_em"], reverse=True)
+        return sorted((self._pedido_visivel(p) for p in self._solicitacoes()), key=lambda item: item["criado_em"], reverse=True)
+
+    @staticmethod
+    def _pedido_visivel(pedido: dict) -> dict:
+        if "itens" in pedido:
+            return {
+                **pedido,
+                "itens": [
+                    {**item, "categoria_compra": normalizar_categoria(item.get("categoria_compra"))}
+                    for item in pedido["itens"]
+                ],
+            }
+        # Compatibilidade com pedidos criados antes da lista de produtos.
+        item = {campo: pedido.get(campo, "") for campo in (
+            "nome", "quantidade", "unidade", "marca", "codigo_fornecedor",
+            "local_sala", "local_armazenamento", "data_compra", "valor",
+        )}
+        recebido = int(pedido.get("quantidade_recebida") or 0)
+        item.update({
+            "id": "item-legado", "quantidade_recebida": recebido,
+            "categoria_compra": "OUTROS",
+            "cadastrado": pedido.get("status") in {"CADASTRADO", "PARCIAL", "DISPONIVEL"},
+            "codigo": pedido.get("item_codigo", ""),
+            "entregas": [{
+                "quantidade": recebido, "data_entrega": pedido.get("data_entrega", ""),
+                "recebido_por": pedido.get("recebido_por", ""), "observacao": "",
+                "excedente": max(0, recebido - int(pedido["quantidade"])),
+            }] if recebido else [],
+        })
+        return {**pedido, "itens": [item]}
+
+    @staticmethod
+    def _atualizar_status(pedido: dict) -> None:
+        recebidos = [int(item.get("quantidade_recebida") or 0) for item in pedido["itens"]]
+        if all(recebido >= int(item["quantidade"]) for recebido, item in zip(recebidos, pedido["itens"])):
+            pedido["status"] = "DISPONIVEL"
+        elif any(recebidos):
+            pedido["status"] = "PARCIAL"
+        elif any(item.get("cadastrado") for item in pedido["itens"]):
+            pedido["status"] = "CADASTRADO"
+        else:
+            pedido["status"] = "SOLICITADO"
 
     def criar_solicitacao(self, solicitante: dict, dados: dict) -> dict:
+        with self._lock:
+            return self._criar_solicitacao(solicitante, dados)
+
+    def _criar_solicitacao(self, solicitante: dict, dados: dict) -> dict:
         solicitacao = {
             "id": f"sol-{uuid.uuid4().hex[:10]}",
-            "nome": dados["nome"].strip(),
-            "quantidade": int(dados.get("quantidade", 1)),
-            "unidade": (dados.get("unidade") or "frasco").strip(),
+            "itens": [{
+                "id": f"item-{uuid.uuid4().hex[:10]}",
+                "nome": item["nome"].strip(),
+                "quantidade": int(item["quantidade"]),
+                "unidade": item["unidade"].strip(),
+                "categoria_compra": normalizar_categoria(item["categoria_compra"]),
+                "quantidade_recebida": 0,
+                "entregas": [],
+            } for item in dados["itens"]],
             "observacao": (dados.get("observacao") or "").strip(),
+            "previsao": (dados.get("previsao") or "").strip(),
+            "verba": (dados.get("verba") or "").strip(),
             "solicitante_id": solicitante["id"],
             "solicitante": solicitante["nome"],
             "status": "SOLICITADO",
@@ -339,49 +395,129 @@ class RepositorioJson:
         for usuario in self._usuarios():
             if usuario.get("perfil") == "TECNICO":
                 solicitacao["avisos"].append(
-                    {"para": usuario["id"], "mensagem": f"Novo pedido: {solicitacao['nome']}", "em": agora()}
+                    {"para": usuario["id"], "mensagem": f"Novo pedido com {len(solicitacao['itens'])} produto(s)", "em": agora()}
                 )
         solicitacoes = self._solicitacoes()
         solicitacoes.append(solicitacao)
         self._gravar_solicitacoes(solicitacoes)
         return solicitacao
 
-    def cadastrar_solicitacao(self, solicitacao_id: str, dados: dict) -> dict | None:
+    def pendencias_compra(self, tecnico: dict) -> dict:
+        if tecnico["perfil"] == "TECNICO":
+            pendentes = [
+                {"solicitacao_id": pedido["id"], "item_id": item["id"], "nome": item["nome"],
+                 "categoria_compra": item.get("categoria_compra", "OUTROS"),
+                 "tecnico_responsavel_id": item.get("tecnico_responsavel_id", "")}
+                for pedido in self.listar_solicitacoes() for item in pedido["itens"]
+                if not item.get("cadastrado")
+                and int(item.get("quantidade_recebida") or 0) < int(item["quantidade"])
+            ]
+        else:
+            pendentes = []
+        return {"total": len(pendentes), "itens": pendentes}
+
+    def assumir_compra(self, solicitacao_id: str, item_id: str, tecnico: dict) -> dict | None:
+        with self._lock:
+            return self._assumir_compra(solicitacao_id, item_id, tecnico)
+
+    def _assumir_compra(self, solicitacao_id: str, item_id: str, tecnico: dict) -> dict | None:
+        solicitacoes = self._solicitacoes()
+        pedido = self._achar_por_id(solicitacoes, solicitacao_id)
+        if pedido is None:
+            return None
+        if "itens" not in pedido:
+            pedido.update(self._pedido_visivel(pedido))
+        item = self._achar_por_id(pedido["itens"], item_id)
+        if item is None:
+            raise ValueError("Produto nao encontrado no pedido")
+        if item.get("cadastrado"):
+            raise ValueError("Compra deste produto ja foi registrada")
+        responsavel = item.get("tecnico_responsavel_id")
+        if responsavel and responsavel != tecnico["id"]:
+            raise ValueError("Outro tecnico ja assumiu este produto")
+        item["tecnico_responsavel_id"] = tecnico["id"]
+        item["tecnico_responsavel"] = tecnico["nome"]
+        pedido["atualizado_em"] = agora()
+        self._gravar_solicitacoes(solicitacoes)
+        return pedido
+
+    def cadastrar_solicitacao(self, solicitacao_id: str, tecnico: dict, dados: dict) -> dict | None:
+        with self._lock:
+            return self._cadastrar_solicitacao(solicitacao_id, tecnico, dados)
+
+    def _cadastrar_solicitacao(self, solicitacao_id: str, tecnico: dict, dados: dict) -> dict | None:
         solicitacoes = self._solicitacoes()
         solicitacao = self._achar_por_id(solicitacoes, solicitacao_id)
         if solicitacao is None:
             return None
-        for campo in ("marca", "codigo_fornecedor", "local_sala", "local_armazenamento"):
-            solicitacao[campo] = (dados.get(campo) or "").strip()
-        if solicitacao["status"] == "SOLICITADO":
-            solicitacao["status"] = "CADASTRADO"
+        if "itens" not in solicitacao:
+            solicitacao.update(self._pedido_visivel(solicitacao))
+        item = self._achar_por_id(solicitacao["itens"], dados["item_id"])
+        if item is None:
+            raise ValueError("Produto nao encontrado no pedido")
+        if tecnico["perfil"] != "DESENVOLVEDOR":
+            if item.get("tecnico_responsavel_id") != tecnico["id"]:
+                raise ValueError("Assuma este produto antes de registrar a compra")
+        if int(item.get("quantidade_recebida") or 0) >= int(item["quantidade"]):
+            raise ValueError("Este produto ja foi recebido por completo")
+        if not (dados.get("marca") or "").strip() or not (dados.get("data_compra") or "").strip():
+            raise ValueError("Informe a empresa e a data da compra para concluir o registro")
+        for campo in ("marca", "codigo_fornecedor", "local_sala", "local_armazenamento", "data_compra", "valor"):
+            item[campo] = (dados.get(campo) or "").strip()
+        item["cadastrado"] = True
+        self._atualizar_status(solicitacao)
         solicitacao["atualizado_em"] = agora()
         self._gravar_solicitacoes(solicitacoes)
         return solicitacao
 
     def receber_solicitacao(self, solicitacao_id: str, recebedor: dict, dados: dict) -> dict | None:
+        with self._lock:
+            return self._receber_solicitacao(solicitacao_id, recebedor, dados)
+
+    def _receber_solicitacao(self, solicitacao_id: str, recebedor: dict, dados: dict) -> dict | None:
         solicitacoes = self._solicitacoes()
         solicitacao = self._achar_por_id(solicitacoes, solicitacao_id)
         if solicitacao is None:
             return None
-        if solicitacao["status"] == "DISPONIVEL":
-            raise ValueError("Este pedido ja foi recebido e adicionado ao estoque")
-        quantidade = int(dados.get("quantidade_recebida", solicitacao["quantidade"]))
-        codigo = compactar_codigo(dados.get("codigo") or f"REQ-{solicitacao['id'][4:].upper()}")
+        if "itens" not in solicitacao:
+            solicitacao.update(self._pedido_visivel(solicitacao))
+        item = self._achar_por_id(solicitacao["itens"], dados["item_id"])
+        if item is None:
+            raise ValueError("Produto nao encontrado no pedido")
+        anterior = int(item.get("quantidade_recebida") or 0)
+        if not item.get("cadastrado"):
+            raise ValueError("O tecnico precisa registrar a compra antes do recebimento")
+        if anterior >= int(item["quantidade"]):
+            raise ValueError("Este produto ja foi recebido por completo")
+        quantidade = int(dados["quantidade_recebida"])
+        excedente = max(0, anterior + quantidade - int(item["quantidade"]))
+        observacao = (dados.get("observacao") or "").strip()
+        if excedente and not observacao:
+            raise ValueError("Informe uma observacao para o recebimento acima do solicitado")
+        codigo = compactar_codigo(dados.get("codigo") or item.get("codigo") or f"REQ-{solicitacao['id'][4:].upper()}-{item['id'][5:].upper()}")
+        if item.get("codigo") and codigo != item["codigo"]:
+            raise ValueError("Use o mesmo codigo do produto nas entregas seguintes")
         existente = self.buscar(codigo)
         if existente is None:
             produto = produto_catalogo(
                 {
                     "codigo": codigo,
                     "tipo": "pedido",
-                    "nome": solicitacao["nome"],
-                    "marca": solicitacao.get("marca", ""),
-                    "empresa": solicitacao.get("marca", ""),
-                    "codigo_fornecedor": solicitacao.get("codigo_fornecedor", ""),
-                    "quantidade": str(quantidade),
-                    "unidade": solicitacao["unidade"],
-                    "local_sala": solicitacao.get("local_sala", ""),
-                    "local_armazenamento": solicitacao.get("local_armazenamento", ""),
+                    "nome": item["nome"],
+                    "solicitante": solicitacao["solicitante"],
+                    "marca": item.get("marca", ""),
+                    "empresa": item.get("marca", ""),
+                    "codigo_fornecedor": item.get("codigo_fornecedor", ""),
+                    "quantidade": str(item["quantidade"]),
+                    "unidade": item["unidade"],
+                    "local_sala": item.get("local_sala", ""),
+                    "local_armazenamento": item.get("local_armazenamento", ""),
+                    "data": item.get("data_compra", ""),
+                    "valor": item.get("valor", ""),
+                    "previsao": solicitacao.get("previsao", ""),
+                    "verba": solicitacao.get("verba", ""),
+                    "entregue": "Sim" if anterior + quantidade >= int(item["quantidade"]) else "Parcial",
+                    "data_entrega": (dados.get("data_entrega") or "").strip() or agora()[:10],
                     "origem": "pedido",
                     "pendente_codigo": not bool(dados.get("codigo")),
                 }
@@ -394,23 +530,28 @@ class RepositorioJson:
             self._gravar_posicoes(posicoes)
         else:
             self.entrada(codigo, quantidade)
-        solicitacao.update(
-            {
-                "status": "DISPONIVEL",
-                "quantidade_recebida": quantidade,
-                "item_codigo": codigo,
-                "recebido_por": recebedor["nome"],
-                "recebido_em": agora(),
-                "atualizado_em": agora(),
-            }
-        )
-        solicitacao["avisos"].append(
-            {
+            if item.get("codigo"):
+                self.editar(codigo, {
+                    "entregue": "Sim" if anterior + quantidade >= int(item["quantidade"]) else "Parcial",
+                    "data_entrega": (dados.get("data_entrega") or "").strip() or agora()[:10],
+                })
+        item["quantidade_recebida"] = anterior + quantidade
+        item["codigo"] = codigo
+        item.setdefault("entregas", []).append({
+            "quantidade": quantidade, "data_entrega": (dados.get("data_entrega") or "").strip() or agora()[:10],
+            "recebido_por": recebedor["nome"], "recebido_em": agora(),
+            "observacao": observacao, "excedente": excedente,
+            "alerta_tecnico_pendente": bool(excedente),
+        })
+        status_anterior = solicitacao["status"]
+        self._atualizar_status(solicitacao)
+        solicitacao["atualizado_em"] = agora()
+        if solicitacao["status"] == "DISPONIVEL" and status_anterior != "DISPONIVEL":
+            solicitacao["avisos"].append({
                 "para": solicitacao["solicitante_id"],
-                "mensagem": f"Seu pedido esta disponivel: {solicitacao['nome']}",
+                "mensagem": "Todos os produtos do seu pedido foram recebidos",
                 "em": agora(),
-            }
-        )
+            })
         self._gravar_solicitacoes(solicitacoes)
         return solicitacao
 

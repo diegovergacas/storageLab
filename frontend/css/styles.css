@@ -324,3 +324,18 @@ select {
 .pedido-mobile span, .pedido-mobile small { color: var(--muted); }
 .pedido-mobile div { display: flex; gap: 8px; margin-top: 3px; }
 .acao-pedido { min-height: 36px; }
+
+.badge-pendencias {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #b52626;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.produto-mobile { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--line); }

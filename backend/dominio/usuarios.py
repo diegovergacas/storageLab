@@ -2,7 +2,7 @@ PERFIS = ("DESENVOLVEDOR", "GERENTE", "TECNICO", "ALUNO")
 
 PERMISSOES = {
     "DESENVOLVEDOR": {"pedir", "cadastrar", "receber", "gerir_usuarios", "apagar_dados"},
-    "GERENTE": {"pedir", "cadastrar", "receber", "gerir_usuarios"},
+    "GERENTE": {"pedir", "receber", "gerir_usuarios"},
     "TECNICO": {"pedir", "cadastrar", "receber"},
     "ALUNO": {"pedir", "receber"},
 }

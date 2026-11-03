@@ -3,7 +3,7 @@
 O fluxo de compras está disponível em `/pedidos`.
 
 ```text
-Pedido → técnicos avisados → cadastro técnico → recebimento → estoque disponível → solicitante avisado
+Pedido com um ou mais produtos → técnicos avisados → cadastro por produto → entregas parciais → estoque atualizado → pedido concluído quando todos os produtos chegarem
 ```
 
 ## Perfis
@@ -12,7 +12,7 @@ Pedido → técnicos avisados → cadastro técnico → recebimento → estoque 
 |---|---:|---:|---:|---:|---:|
 | Aluno | Sim | Não | Sim | Não | Não |
 | Técnico | Sim | Sim | Sim | Não | Não |
-| Gerente | Sim | Sim | Sim | Sim | Não |
+| Gerente | Sim | Não | Sim | Sim | Não |
 | Desenvolvedor | Sim | Sim | Sim | Sim | Sim |
 
 - Para desenvolvimento, os quatro perfis genéricos (Aluno, Técnico, Gerente e
@@ -26,11 +26,24 @@ Pedido → técnicos avisados → cadastro técnico → recebimento → estoque 
 
 1. Na tela `/pedidos`, escolha o usuário no seletor superior.
 2. Qualquer perfil pode enviar um pedido. Todos os técnicos recebem o aviso.
-3. Técnico, gerente ou desenvolvedor pode completar fornecedor e local de
-   armazenamento em **Cadastrar dados**.
-4. Aluno, técnico, gerente ou desenvolvedor pode registrar o recebimento. A
-   quantidade entra no estoque e o solicitante recebe um aviso.
-5. Se não for informado código de barras no recebimento, o sistema gera um
+3. Todos os técnicos veem todos os produtos ainda sem registro de compra e o
+   contador vermelho ao lado do perfil Técnico mostra quantos estão abertos.
+   O pedido indica a categoria de cada produto: reagente química, células,
+   escritório, informática, kits de biologia molecular, consumíveis de
+   laboratório, equipamentos, biossegurança/EPI ou outros. Um técnico clica
+   em **Assumir compra** para se responsabilizar
+   por um produto; outro técnico não consegue assumir ou registrar esse mesmo
+   produto. O técnico responsável registra fornecedor e demais dados. O
+   desenvolvedor pode fazer o registro como administrador.
+4. O recebimento fica disponível depois do registro de compra. Aluno, técnico,
+   gerente ou desenvolvedor pode registrar cada entrega de um produto.
+   A quantidade efetivamente recebida entra no estoque. O pedido fica
+   `PARCIAL` enquanto faltar qualquer produto e passa a `DISPONIVEL` quando
+   todos atingirem a quantidade solicitada.
+5. Se a soma recebida ultrapassar a quantidade solicitada, o recebedor precisa
+   informar uma observação. A entrega registra o excedente e o campo
+   `alerta_tecnico_pendente`. O envio do alerta será implementado depois.
+6. Se não for informado código de barras no recebimento, o sistema gera um
    código interno `REQ-...`. Ele pode ser vinculado a um código de barras depois.
 
 ## Limitação desta fase

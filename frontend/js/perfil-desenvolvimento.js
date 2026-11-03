@@ -6,6 +6,16 @@ async function iniciar() {
   try {
     const resposta = await fetch("/api/usuarios");
     const { usuarios } = await resposta.json();
+    const tecnico = usuarios.find((item) => item.perfil === "TECNICO");
+    if (tecnico) {
+      const respostaPendencias = await fetch(`/api/solicitacoes/pendencias-tecnico?usuario_id=${encodeURIComponent(tecnico.id)}`);
+      if (respostaPendencias.ok) {
+        const { total } = await respostaPendencias.json();
+        const badge = document.querySelector("#badge-tecnico-gestao");
+        badge.textContent = total;
+        badge.hidden = !total;
+      }
+    }
     const selecionar = (perfil) => {
       const usuario = usuarios.find((item) => item.perfil === perfil);
       if (!usuario) return;

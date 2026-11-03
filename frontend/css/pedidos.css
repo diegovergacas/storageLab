@@ -74,6 +74,7 @@ button {
 
 .acoes, .perfis-dev { display: flex; flex-wrap: wrap; gap: 8px; }
 .acoes button { background: #355245; }
+.acoes .secundario { background: #e9e2d2; color: var(--lab); }
 .perigo { border-color: #d99b82; }
 .perigo button { background: var(--warn); }
 .aviso { margin: 7px 0; padding: 9px; border-radius: 8px; background: #efe4cb; }
@@ -93,6 +94,24 @@ button {
 
 .perfis-dev button { border: 1px solid var(--line); background: #fff; color: var(--lab); }
 .perfis-dev button.ativo { background: var(--lab); color: #fff; }
+
+.badge-pendencias {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #b52626;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.badge-pendencias[hidden] { display: none; }
+.pedido-item { padding: 12px 0; border-top: 1px solid var(--line); }
+.pedido-item p { margin: 5px 0; }
 
 @media (max-width: 520px) {
   .usuario-linha { flex-wrap: wrap; }

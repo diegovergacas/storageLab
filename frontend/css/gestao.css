@@ -114,6 +114,21 @@ dialog select {
   color: #f6f1e6;
 }
 
+.badge-pendencias {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #b52626;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.badge-pendencias[hidden] { display: none; }
+
 .acesso-aluno {
   width: min(720px, calc(100% - 24px));
   margin: 18px auto;
